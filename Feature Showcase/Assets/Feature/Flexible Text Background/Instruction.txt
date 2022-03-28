@@ -1,0 +1,20 @@
+1. Create an image [background] and an [text].
+2. Set [text] as a child of [background].
+3. Add component [Content Size Fitter] and [Horizontal Layout Group] to [background] then set them as following:
+    
+    [Content Size Fitter]
+    - Horizontal Fit = Preferred Size
+    - Vertical Fit   = Preferred Size
+
+    [Horizontal Layout Group]
+    - Control Child Size  : Width = True | Height = True
+    - Use Child Scale     : Width = True | Height = True
+    - Child Force Expand  : Width = True | Height = True
+
+4. Change the following content for more [background] customization:
+
+   [Rect Transform]
+   - The "Pivot" variable are where the text will be expand away from.
+
+   [Horizontal Layout Group]
+   - "Padding" make the text space away from border.
