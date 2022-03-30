@@ -1,30 +1,51 @@
 using System.Collections.Generic;
+using System.Collections;
 using UnityEngine;
 using System;
 
-[Serializable] public class NodeData
-{
-	public Vector2 coordinates, position;
-	public int replicated;
-	public Vector2[] neighbours = new Vector2[4];
-}
-
 public class NodeGenerator : MonoBehaviour
 {
-	public GameObject plainPrefab; GameObject group;
+	[Serializable] class Testing 
+	{
+		public bool autoGenerate; 
+		[Min(0.1f)]public float autoSpeed;
+		public Color floorColor, leaderColor;
+	}
+	[SerializeField] 
+	Testing testing = new Testing();
+	public GameObject floorPrefab; GameObject floorGroup;
 	[Tooltip("How many node will be generate")]
 	public int amount;
-	[Serializable] class Rate {public float up, down, left, right;}
-	[Tooltip("The percent chance of generating another node at any direction")]
-	[SerializeField] Rate rate = new Rate();
-	[Tooltip("The minimum amount of direction an node need to generate")]
-    public int directionRequired;
-	[Tooltip("How far away node is from each other")]
-	public float spacing;
-	public bool hasGenerated; public event Action completeGenerate;
+	[Tooltip("The minimum and maximum amount of replicate an node need to do")]
+	public ReplicateAmount replicateAmount = new ReplicateAmount();
+	[Tooltip("The percent chance of generate")]
+	public RateSetting replicateRate = new RateSetting();
+	[HideInInspector] public bool completeGenerate, areGenerating; public event Action onGenerated;
+	[Tooltip("Setting for node")]
+	public NodeSetting nodeSetting;
 	public List<NodeData> nodes = new List<NodeData>();
-	[Header("Testing")] [Tooltip("How fast it will automatic generate (0 are disable)")]
-	public float automaticSpeed;
+
+	#region Classes
+	[Serializable] public class ReplicateAmount {[Range(1,4)] public int min, max;}
+	[Serializable] public class NodeSetting {public Vector2 scale, spacing;}
+	[Serializable] public class RateSetting 
+	{public float general; public bool useDirectional; public float up, down, left, right;}
+	[Serializable] public class NodeData
+	{
+		public Vector2 coordinates, position;
+		public int replicateCount;
+		public Vector2[] replicates = new Vector2[4];
+		public int neighboursCount;
+		[Serializable] public class Neighbours {public bool filled; public Vector2 coord;}
+		public Neighbours[] neighbours = new Neighbours[] {new Neighbours(),new Neighbours(),new Neighbours(),new Neighbours()};
+		[Serializable] public class Building 
+		{
+			public GameObject floor, bridge, wall;
+			public SpriteRenderer floorRender; 
+		} 
+		public Building build = new Building();
+	}
+	#endregion
 
 	void Update()
 	{
@@ -34,102 +55,203 @@ public class NodeGenerator : MonoBehaviour
 
 	public void Generate()
 	{
-		//Destroy the node group if it exist
-		if(group != null) {Destroy(group);}
-		//No longer has geneated
-		hasGenerated = false;
+		//Only generating when not generate
+		if(areGenerating == true) {return;}
+		//Are now generating
+		areGenerating = true;
+		//Destroy the old node group if it exist
+		if(floorGroup != null) {Destroy(floorGroup);}
+		//Create an new group object for floor then edit it name
+		floorGroup = new GameObject(); floorGroup.name = "Floor Group";
+		//No longer has generated
+		completeGenerate = false;
 		//Renew the node list
 		nodes.Clear(); nodes = new List<NodeData>();
 		//Add the first empty node than replicate at it
-		nodes.Add(new NodeData()); Replicate(nodes[0]);
+		nodes.Add(new NodeData()); StartCoroutine(Replicate(nodes[0], nodes[0]));
 	}
 
-	void Replicate(NodeData point)
+	IEnumerator Replicate(NodeData leader, NodeData prev)
 	{
-		//If this node point are the final node
+		//Build floor at this leader
+		BuildFloor(leader, prev);
+		//! If THIS leader node are the final node (Improving later by only when truly complete)
 		if(nodes.Count >= amount)
 		{
-			//Call the complete generate event
-			completeGenerate?.Invoke(); 
-			//Has generated to true
-			hasGenerated = true;
-			//Placing plain
-			PlacePlain();
-			//Auto generate again if needed
-			if(automaticSpeed > 0) {Invoke("Generate", automaticSpeed);}
+			//Call the on generated event
+			onGenerated?.Invoke();
+			//Has completed generation
+			areGenerating = false; completeGenerate = true;
+			//Auto generate if wanted when complete the current generate
+			if(testing.autoGenerate) {Invoke("Generate", testing.autoSpeed);}
 		}
-		//The result too see what direction will be Replicate
+		//Wait for an frame
+		yield return null;
+		//If THOSE leader node are the final node
+		if(nodes.Count >= amount)
+		{
+			//Revert those node node floor color back to normal
+			leader.build.floorRender.color = testing.floorColor;
+		}
+		//? Randomly replicate
+		//The result too see what direction will be replicate
 		bool[] result = new bool[4];
 		//Go through all the result need to calculated
 		for (int c = 0; c < result.Length; c++)
 		{
 			//The chance of this cycle
 			float chance = UnityEngine.Random.Range(0f, 100f);
-			//@ Return the result base on rate of each direction
-			if(c == 0 && rate.up    >= chance) {result[c] = true;}
-			if(c == 1 && rate.down  >= chance) {result[c] = true;}
-			if(c == 2 && rate.left  >= chance) {result[c] = true;}
-			if(c == 3 && rate.right >= chance) {result[c] = true;}
+			//If using the directional rate
+			if(replicateRate.useDirectional)
+			{
+				//@ Return the result base on rate of each direction
+				if(c == 0 && replicateRate.up    >= chance) {result[c] = true;}
+				if(c == 1 && replicateRate.down  >= chance) {result[c] = true;}
+				if(c == 2 && replicateRate.left  >= chance) {result[c] = true;}
+				if(c == 3 && replicateRate.right >= chance) {result[c] = true;}
+			}
+			//Return the result base on the rate if not use directional rate
+			else {if(replicateRate.general >= chance) {result[c] = true;}}
 		}
-		///Replicate at the 0 [UP] direction if result are true
-		if(result[0]) {NewDirection(point, new Vector2(00,+1), 0);}
-		///Replicate at the 1 [DOWN] direction if result are true
-		if(result[1]) {NewDirection(point, new Vector2(00,-1), 1);}
-		///Replicate at the 2 [LEFT] direction if result are true
-		if(result[2]) {NewDirection(point, new Vector2(-1,00), 2);}
-		///Replicate at the 3 [RIGHT] direction if result are true
-		if(result[3]) {NewDirection(point, new Vector2(+1,00), 3);}
+		//Go through all 4 direction to check each direction at this leader node
+		for (int d = 0; d < 4; d++) {CheckDirection(leader, DirectionVector(d), d, result[d]);}
+		//If this leader haven't replcate the minimum amount of node needed
+		if(nodes.Count < amount && leader.replicateCount < replicateAmount.min)
+		{
+			//Replicate again at this leader
+			StartCoroutine(Replicate(leader, leader));
+		}
+		//? Check neighbour
+		//Go through all 4 direction of this leader
+		for (int d = 0; d < 4; d++)
+		{
+			//Search the node at 4 direction at this leader
+			NodeData searched = SearchNodeCoordinates(leader.coordinates + DirectionVector(d));
+			//Save the opposite direction of current direction
+			int o = OppositeDirection(d);
+			//Only countine node at this direction if it has been search and it neighbours are empty
+			if(searched == null) {continue;} if(leader.neighbours[d].filled) {continue;}
+			//Increase the neighbours count of both leader and search
+			leader.neighboursCount++; searched.neighboursCount++;
+			//Set neighbour of leader filled at current direction and searched node at opposite
+			leader.neighbours[d].filled = true;searched.neighbours[o].filled = true;
+		}
 	}
 
-	void NewDirection(NodeData point, Vector2 directionVector, int directionIndex)
+	void CheckDirection(NodeData leader, Vector2 vector, int index, bool needReplicate)
 	{
-		//Stop create more direction if has enough
-		if(nodes.Count >= amount) {return;}
+		//Getting the coordinates of direction by increase it given vector with leader
+		Vector2 directionCoord = leader.coordinates + vector;
+		//Set the coordinates of this leader neighbours at index direction
+		leader.neighbours[index].coord = directionCoord;
+		///Only replicate when needed or still need more node or has reach the max amount of replicating
+		if(!needReplicate || nodes.Count >= amount || leader.replicateCount > replicateAmount.max) {return;}
 		//Create an new temp node
 		NodeData newNode = new NodeData();
-		//Set the temp's node coordiates with point coord increase with direction
-		newNode.coordinates = point.coordinates + directionVector;
-		//Stop if the temp node coordinates are already taken
+		//Set the new node coordiates as the direction coordinates
+		newNode.coordinates = directionCoord;
+		//Stop if the new node coordinates are already taken
 		if(!IsEmpty(newNode.coordinates)) {return;}
-		//Set the temp node's position by multiple coord with spacing
-		newNode.position = new Vector2(newNode.coordinates.x * spacing, newNode.coordinates.y * spacing);
-		//Add the temp node into list
+		//Set the new node's position
+		newNode.position = new Vector2
+		(
+			//Multiple the leader X coordinates with size + spacing
+			directionCoord.x * (nodeSetting.scale.x + nodeSetting.spacing.x),
+			//Multiple the leader Y coordinates with size + spacing
+			directionCoord.y * (nodeSetting.scale.y + nodeSetting.spacing.y)
+		);
+		//Add the new node into list
 		nodes.Add(newNode);
-		//This point has replicate an node
-		point.replicated++;
-		//Save the coordinates of direction this point has replicate
-		point.neighbours[directionIndex] = newNode.position;
+		//This leader has replicate an node
+		leader.replicateCount++;
+		//Save the coordinates of this node leader has replicate
+		leader.replicates[index] = newNode.coordinates;
 		//Begin replicate more
-		Replicate(newNode);
+		StartCoroutine(Replicate(newNode, leader));
 	}
 
-	bool IsEmpty(Vector2 coord)
+#region Converter
+	Vector2 DirectionVector(int index)
 	{
-		//Send false if when go through all the nodes there already an coodrinated sam as given
-		for (int n = 0; n < nodes.Count; n++) {if(nodes[n].coordinates == coord) {return false;}}
-		//There is empty node if no node has the same coordinates given
-		return true;
+		//@ Return vector depend on index given from 0-3
+		if(index == 0) {return Vector2.up;}
+		if(index == 1) {return Vector2.down;}
+		if(index == 2) {return Vector2.left;}
+		if(index == 3) {return Vector2.right;}
+		//Call an warning an return vector zero if index given are not 0-3
+		Debug.LogWarning("There no direction for index " + index); return Vector2.zero;
 	}
 
-	int NodeIndex(NodeData need) 
+	int OppositeDirection(int i) 
 	{
-		//Go through all the list to return the index of need node data in list
-		for (int n = 0; n < nodes.Count; n++) {if(nodes[n] == need) {return n+1;}}
-		//Return -1 if don't found any
+		//Return the number opposite of index given base direction order
+		if(i==0){return 1;} if(i==1){return 0;} if(i==2){return 3;} if(i==3){return 2;}
+		//Call an warning an return -1 if index given are not 0-3
+		Debug.LogWarning("There no opposite direction for index " + i); return -1;
+	}
+#endregion
+
+#region Searcher
+	public int GetIndexOfNode(NodeData node)
+	{
+		//Return the index of given node by go through all the nodes
+		for (int n = 0; n < nodes.Count; n++) {if(nodes[n] == node) {return n;}}
+		//Return -1 if there is no index at given node
 		return -1;
 	}
 
-	void PlacePlain()
+	public NodeData SearchNodeIndex(int index)
 	{
-		//Create an new group object then edit it name
-		group = new GameObject(); group.name = "Plain Group";
-		//Go through all the node as create
-		for (int n = 0; n < nodes.Count; n++)
-		{
-			//Create the plain at those node position
-			GameObject nObj = Instantiate(plainPrefab, nodes[n].position, Quaternion.identity);
-			//Add the node object as children of group
-			nObj.transform.parent = group.transform;
-		}
+		//Return the node data of node that has the same position as given by go through all the nodes
+		for (int n = 0; n < nodes.Count; n++) {if(n == index) {return nodes[n];}}
+		//Return null if there is no data for node at position given
+		return null;
+	}
+
+	public NodeData SearchNodeCoordinates(Vector2 coordinates)
+	{
+		//Return the node data of node that has the same coordinates as given by go through all the nodes
+		for (int n = 0; n < nodes.Count; n++) {if(nodes[n].coordinates == coordinates) {return nodes[n];}}
+		//Return null if there is no data for node at coordinates given
+		return null;
+	}
+
+	public NodeData SearchNodePosition(Vector2 position)
+	{
+		//Return the node data of node that has the same position as given by go through all the nodes
+		for (int n = 0; n < nodes.Count; n++) {if(nodes[n].position == position) {return nodes[n];}}
+		//Return null if there is no data for node at position given
+		return null;
+	}
+
+	public bool IsEmpty(Vector2 coordinates)
+	{
+		//Return false if when go through all the nodes and there already an coodrinated same as given
+		for (int n = 0; n < nodes.Count; n++) {if(nodes[n].coordinates == coordinates) {return false;}}
+		//There is empty node at coordinates cause no node has the same coordinates given
+		return true;
+	}
+#endregion
+
+	void BuildFloor(NodeData node, NodeData prev)
+	{
+		//Don't build floor if it has already been build
+		if(node.build.floor != null) {return;}
+		//Build the floor at the node given position
+		GameObject floor = Instantiate(floorPrefab, node.position, Quaternion.identity);
+		//Group the floor
+		floor.transform.SetParent(floorGroup.transform);
+		//Set the floor size as node size
+		floor.transform.localScale = nodeSetting.scale;
+		//Set the floor name with index
+		floor.name = (nodes.Count-1) + " - Floor";
+		//Save the floor object inside the node building it
+		node.build.floor = floor;
+		//Save the floot render inside the node building it
+		node.build.floorRender = floor.GetComponent<SpriteRenderer>();
+		//Set the floor color to it the replicator color
+		node.build.floorRender.color = testing.leaderColor;
+		//Revert the previous node floor color back to normal
+		prev.build.floorRender.color = testing.floorColor;
 	}
 }
