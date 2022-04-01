@@ -23,11 +23,14 @@ public class NodeGenerator : MonoBehaviour
 	[HideInInspector] public bool completeGenerate, areGenerating; public event Action onGenerated;
 	[Tooltip("Setting for node")]
 	public NodeSetting nodeSetting;
+	public List<NodeData> currentLeaders = new List<NodeData>();
 	public List<NodeData> nodes = new List<NodeData>();
 
 #region Classes
-	[Serializable] public class ReplicateAmount {[Range(1,4)] public int min, max;}
-	[Serializable] public class NodeSetting {public Vector2 scale, spacing;}
+	[Serializable] public class ReplicateAmount 
+	{[Range(1,4)] public int min, max;}
+	[Serializable] public class NodeSetting 
+	{public Vector2 scale, spacing;}
 	[Serializable] public class RateSetting 
 	{public float general; public bool useDirectional; public float up, down, left, right;}
 	[Serializable] public class NodeData
@@ -74,6 +77,8 @@ public class NodeGenerator : MonoBehaviour
 
 	IEnumerator Replicate(NodeData leader, NodeData prev, int forceDirection = -1)
 	{
+		//This node are now the current leader
+		currentLeaders.Add(leader);
 		//Build floor at this leader
 		BuildFloor(leader, prev);
 		//! If THIS leader node are the final node (Improving later by only when truly complete)
@@ -128,16 +133,12 @@ public class NodeGenerator : MonoBehaviour
 		//! Shuffle drection
 		//Go through all 4 direction to check each of them
 		for (int d = 0; d < 4; d++) {CheckDirection(leader, DirectionVector(d), d, result[d]);}
+		//This node are no longer the current leader
+		currentLeaders.Remove(leader);
 		//Stop going further if this leader are an continuation node
 		if(leader.continuation) {yield break;}
 		//Attemp to escape again at this leader if the leader is still stuck
 		if(leader.stuck) {StartCoroutine(Replicate(leader, leader)); yield break;}
-		//If this leader haven't replicate enough and don't meet the minimum amount of replicate need
-		if(nodes.Count < amount && leader.replicateCount < replicateAmount.min)
-		{
-			//Replicate again at this leader 
-			StartCoroutine(Replicate(leader, leader));
-		}
 	#region Check neighbour
 		//Go through all 4 direction of this leader when there sill neighbours to check
 		for (int d = 0; d < 4; d++)
@@ -146,16 +147,28 @@ public class NodeGenerator : MonoBehaviour
 			NodeData finded = FindNodeAtCoordinates(leader.coordinates + DirectionVector(d));
 			//Save the opposite direction of current direction
 			int o = OppositeDirection(d);
-			//Only countine node at this direction if it has been finded and it neighbours are empty
+			//Only countine at this direction if it has node and that node neighbours is empty
 			if(finded == null) {continue;} if(leader.neighbours[d].filled) {continue;}
 			//Increase the neighbours count of both leader and finded
 			leader.neighboursCount++; finded.neighboursCount++;
 			//Set neighbour of this leader filled at current direction and finded node at opposite
 			leader.neighbours[d].filled = true; finded.neighbours[o].filled = true;
 		}
-		//The leader are now stuck when all neighbours has filled and this is not escape node
-		if(leader.neighboursCount >= 4 && !leader.escape) {leader.stuck = true;}
+		//When the neighbours are filled from all 4 side
+		if(leader.neighboursCount >= 4) 
+		{
+			//This leader is now stuck if it is the only leader
+			if(currentLeaders.Count <= 1) {leader.stuck = true;}
+			//? Don't attempt to replicate again if there is still leader (and reset color to default)
+			else if(currentLeaders.Count > 1) {leader.build.floorRender.color = testing.floorColor; yield break;}
+		}
 	#endregion
+		/// If haven't got enough node and this leader don't meet the minimum amount of replicate need
+		if(nodes.Count < amount && leader.replicateCount < replicateAmount.min)
+		{
+			//Replicate again at this leader 
+			StartCoroutine(Replicate(leader, leader));
+		}
 	}
 
 	void CheckDirection(NodeData leader, Vector2 vector, int index, bool needReplicate)

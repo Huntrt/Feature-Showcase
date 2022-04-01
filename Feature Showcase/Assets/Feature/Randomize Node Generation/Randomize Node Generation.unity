@@ -246,9 +246,9 @@ MonoBehaviour:
   amount: 100
   replicateAmount:
     min: 1
-    max: 1
+    max: 2
   replicateRate:
-    general: 70
+    general: 20
     useDirectional: 0
     up: 0
     down: 0
@@ -259,6 +259,7 @@ MonoBehaviour:
   nodeSetting:
     scale: {x: 0.1, y: 0.1}
     spacing: {x: 0.03, y: 0.03}
+  currentLeaders: []
   nodes: []
 --- !u!4 &1441528818
 Transform:
