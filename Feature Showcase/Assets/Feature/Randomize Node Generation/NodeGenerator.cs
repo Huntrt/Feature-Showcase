@@ -8,8 +8,8 @@ public class NodeGenerator : MonoBehaviour
 	[Serializable] class Testing 
 	{
 		public bool autoGenerate; 
-		[Min(0.1f)]public float autoSpeed;
-		public Color floorColor, leaderColor;
+		[Min(0.1f)] public float autoSpeed;
+		public Color floorColor, leaderColor, stuckColor;
 	}
 	[SerializeField] 
 	Testing testing = new Testing();
@@ -25,7 +25,7 @@ public class NodeGenerator : MonoBehaviour
 	public NodeSetting nodeSetting;
 	public List<NodeData> nodes = new List<NodeData>();
 
-	#region Classes
+#region Classes
 	[Serializable] public class ReplicateAmount {[Range(1,4)] public int min, max;}
 	[Serializable] public class NodeSetting {public Vector2 scale, spacing;}
 	[Serializable] public class RateSetting 
@@ -44,8 +44,9 @@ public class NodeGenerator : MonoBehaviour
 			public SpriteRenderer floorRender; 
 		} 
 		public Building build = new Building();
+		[HideInInspector] public bool stuck, continuation, escape;
 	}
-	#endregion
+#endregion
 
 	void Update()
 	{
@@ -71,7 +72,7 @@ public class NodeGenerator : MonoBehaviour
 		nodes.Add(new NodeData()); StartCoroutine(Replicate(nodes[0], nodes[0]));
 	}
 
-	IEnumerator Replicate(NodeData leader, NodeData prev)
+	IEnumerator Replicate(NodeData leader, NodeData prev, int forceDirection = -1)
 	{
 		//Build floor at this leader
 		BuildFloor(leader, prev);
@@ -93,80 +94,128 @@ public class NodeGenerator : MonoBehaviour
 			//Revert those node node floor color back to normal
 			leader.build.floorRender.color = testing.floorColor;
 		}
-		//? Randomly replicate
-		//The result too see what direction will be replicate
+	#region Random Replicate
+		//The result to see what direction will be replicate
 		bool[] result = new bool[4];
-		//Go through all the result need to calculated
-		for (int c = 0; c < result.Length; c++)
+		//If this leader has been force to use an direction
+		if(forceDirection != -1)
 		{
-			//The chance of this cycle
-			float chance = UnityEngine.Random.Range(0f, 100f);
-			//If using the directional rate
-			if(replicateRate.useDirectional)
-			{
-				//@ Return the result base on rate of each direction
-				if(c == 0 && replicateRate.up    >= chance) {result[c] = true;}
-				if(c == 1 && replicateRate.down  >= chance) {result[c] = true;}
-				if(c == 2 && replicateRate.left  >= chance) {result[c] = true;}
-				if(c == 3 && replicateRate.right >= chance) {result[c] = true;}
-			}
-			//Return the result base on the rate if not use directional rate
-			else {if(replicateRate.general >= chance) {result[c] = true;}}
+			//Set the result at direction has been force to true
+			result[forceDirection] = true;
 		}
-		//Go through all 4 direction to check each direction at this leader node
+		//If this leader need to randomize it own direction
+		else
+		{
+			//Go through all the result need to randomize
+			for (int c = 0; c < result.Length; c++)
+			{
+				//The randomize chance of this cycle
+				float chance = UnityEngine.Random.Range(0f, 100f);
+				//If using the directional rate
+				if(replicateRate.useDirectional)
+				{
+					//@ Set the result base on rate of each direction compare to chance
+					if(c == 0 && replicateRate.up    >= chance) {result[c] = true;}
+					if(c == 1 && replicateRate.down  >= chance) {result[c] = true;}
+					if(c == 2 && replicateRate.left  >= chance) {result[c] = true;}
+					if(c == 3 && replicateRate.right >= chance) {result[c] = true;}
+				}
+				//Return the result base on general the rate compare to chance
+				else {if(replicateRate.general >= chance) {result[c] = true;}}
+			}
+		}
+	#endregion
+		//! Shuffle drection
+		//Go through all 4 direction to check each of them
 		for (int d = 0; d < 4; d++) {CheckDirection(leader, DirectionVector(d), d, result[d]);}
-		//If this leader haven't replcate the minimum amount of node needed
+		//Stop going further if this leader are an continuation node
+		if(leader.continuation) {yield break;}
+		//Attemp to escape again at this leader if the leader is still stuck
+		if(leader.stuck) {StartCoroutine(Replicate(leader, leader)); yield break;}
+		//If this leader haven't replicate enough and don't meet the minimum amount of replicate need
 		if(nodes.Count < amount && leader.replicateCount < replicateAmount.min)
 		{
-			//Replicate again at this leader
+			//Replicate again at this leader 
 			StartCoroutine(Replicate(leader, leader));
 		}
-		//? Check neighbour
-		//Go through all 4 direction of this leader
+	#region Check neighbour
+		//Go through all 4 direction of this leader when there sill neighbours to check
 		for (int d = 0; d < 4; d++)
 		{
-			//Search the node at 4 direction at this leader
-			NodeData searched = SearchNodeCoordinates(leader.coordinates + DirectionVector(d));
+			//Findind node at four direction in leader
+			NodeData finded = FindNodeAtCoordinates(leader.coordinates + DirectionVector(d));
 			//Save the opposite direction of current direction
 			int o = OppositeDirection(d);
-			//Only countine node at this direction if it has been search and it neighbours are empty
-			if(searched == null) {continue;} if(leader.neighbours[d].filled) {continue;}
-			//Increase the neighbours count of both leader and search
-			leader.neighboursCount++; searched.neighboursCount++;
-			//Set neighbour of leader filled at current direction and searched node at opposite
-			leader.neighbours[d].filled = true;searched.neighbours[o].filled = true;
+			//Only countine node at this direction if it has been finded and it neighbours are empty
+			if(finded == null) {continue;} if(leader.neighbours[d].filled) {continue;}
+			//Increase the neighbours count of both leader and finded
+			leader.neighboursCount++; finded.neighboursCount++;
+			//Set neighbour of this leader filled at current direction and finded node at opposite
+			leader.neighbours[d].filled = true; finded.neighbours[o].filled = true;
 		}
+		//The leader are now stuck when all neighbours has filled and this is not escape node
+		if(leader.neighboursCount >= 4 && !leader.escape) {leader.stuck = true;}
+	#endregion
 	}
 
 	void CheckDirection(NodeData leader, Vector2 vector, int index, bool needReplicate)
 	{
-		//Getting the coordinates of direction by increase it given vector with leader
-		Vector2 directionCoord = leader.coordinates + vector;
-		//Set the coordinates of this leader neighbours at index direction
-		leader.neighbours[index].coord = directionCoord;
-		///Only replicate when needed or still need more node or has reach the max amount of replicating
-		if(!needReplicate || nodes.Count >= amount || leader.replicateCount > replicateAmount.max) {return;}
+		//Get the next node to replicate that are at this leader direction
+		NodeData nextNode = FindNodeAtCoordinates(leader.coordinates + vector);
+		//Set the leader neighbours coordinates as next node coordinates if it exist
+		if(nextNode != null) {leader.neighbours[index].coord = nextNode.coordinates;}
+		//Stop if this direction don't need replication
+		if(!needReplicate) {return;}
+		//! If the leader are stuck
+		if(leader.stuck)
+		{
+			leader.build.floorRender.color = testing.stuckColor;
+			//If there already an node ar the next node
+			if(nextNode != null)
+			{
+				//The leader has continue escape attempt at the next node
+				leader.continuation = true;
+				//The leader transfer it stuck to the next node
+				leader.stuck = false; nextNode.stuck = true; 
+				//Try to escape at the next node with the same direction
+				StartCoroutine(Replicate(nextNode, leader, index)); return;
+			}
+			//If there are no node at the next node
+			else
+			{
+				//The leader are no longer stuck
+				leader.stuck = false;
+				//The leader has escape using this direction
+				leader.escape = true;
+			}
+		}
+		//If the leader are not stuck
+		if(!leader.stuck)
+		{
+			//Ignore the max replicate if this leader is an escape node
+			if(!leader.escape && leader.replicateCount >= replicateAmount.max) {return;}
+			//Stop if the has reach the needed node amount of next node are not empty
+			if(nodes.Count >= amount || nextNode != null) {return;}
+		}
 		//Create an new temp node
 		NodeData newNode = new NodeData();
-		//Set the new node coordiates as the direction coordinates
-		newNode.coordinates = directionCoord;
-		//Stop if the new node coordinates are already taken
-		if(!IsEmpty(newNode.coordinates)) {return;}
+		//Set the new node coordiates as the leader coordinates increase with this direction
+		newNode.coordinates = leader.coordinates + vector;
 		//Set the new node's position
 		newNode.position = new Vector2
 		(
-			//Multiple the leader X coordinates with size + spacing
-			directionCoord.x * (nodeSetting.scale.x + nodeSetting.spacing.x),
-			//Multiple the leader Y coordinates with size + spacing
-			directionCoord.y * (nodeSetting.scale.y + nodeSetting.spacing.y)
+			//Multiple the new node X coordinates with size + spacing
+			newNode.coordinates.x * (nodeSetting.scale.x + nodeSetting.spacing.x),
+			//Multiple the new node Y coordinates with size + spacing
+			newNode.coordinates.y * (nodeSetting.scale.y + nodeSetting.spacing.y)
 		);
 		//Add the new node into list
 		nodes.Add(newNode);
-		//This leader has replicate an node
-		leader.replicateCount++;
-		//Save the coordinates of this node leader has replicate
+		//This leader has replicate an new node if it not an escape replicate
+		if(!leader.escape) {leader.replicateCount++;}
+		//Save the coordinates of thie new node leader has replicate
 		leader.replicates[index] = newNode.coordinates;
-		//Begin replicate more
+		//Begin replicate more at the new node with previous node being leader
 		StartCoroutine(Replicate(newNode, leader));
 	}
 
@@ -178,8 +227,8 @@ public class NodeGenerator : MonoBehaviour
 		if(index == 1) {return Vector2.down;}
 		if(index == 2) {return Vector2.left;}
 		if(index == 3) {return Vector2.right;}
-		//Call an warning an return vector zero if index given are not 0-3
-		Debug.LogWarning("There no direction for index " + index); return Vector2.zero;
+		//Return zero vector if index given are not 0-3
+		return Vector2.zero;
 	}
 
 	int OppositeDirection(int i) 
@@ -191,7 +240,7 @@ public class NodeGenerator : MonoBehaviour
 	}
 #endregion
 
-#region Searcher
+#region Finder
 	public int GetIndexOfNode(NodeData node)
 	{
 		//Return the index of given node by go through all the nodes
@@ -200,7 +249,7 @@ public class NodeGenerator : MonoBehaviour
 		return -1;
 	}
 
-	public NodeData SearchNodeIndex(int index)
+	public NodeData FindNodeAtIndex(int index)
 	{
 		//Return the node data of node that has the same position as given by go through all the nodes
 		for (int n = 0; n < nodes.Count; n++) {if(n == index) {return nodes[n];}}
@@ -208,7 +257,7 @@ public class NodeGenerator : MonoBehaviour
 		return null;
 	}
 
-	public NodeData SearchNodeCoordinates(Vector2 coordinates)
+	public NodeData FindNodeAtCoordinates(Vector2 coordinates)
 	{
 		//Return the node data of node that has the same coordinates as given by go through all the nodes
 		for (int n = 0; n < nodes.Count; n++) {if(nodes[n].coordinates == coordinates) {return nodes[n];}}
@@ -216,20 +265,12 @@ public class NodeGenerator : MonoBehaviour
 		return null;
 	}
 
-	public NodeData SearchNodePosition(Vector2 position)
+	public NodeData FindNodeAtPosition(Vector2 position)
 	{
 		//Return the node data of node that has the same position as given by go through all the nodes
 		for (int n = 0; n < nodes.Count; n++) {if(nodes[n].position == position) {return nodes[n];}}
 		//Return null if there is no data for node at position given
 		return null;
-	}
-
-	public bool IsEmpty(Vector2 coordinates)
-	{
-		//Return false if when go through all the nodes and there already an coodrinated same as given
-		for (int n = 0; n < nodes.Count; n++) {if(nodes[n].coordinates == coordinates) {return false;}}
-		//There is empty node at coordinates cause no node has the same coordinates given
-		return true;
 	}
 #endregion
 
@@ -239,19 +280,14 @@ public class NodeGenerator : MonoBehaviour
 		if(node.build.floor != null) {return;}
 		//Build the floor at the node given position
 		GameObject floor = Instantiate(floorPrefab, node.position, Quaternion.identity);
-		//Group the floor
 		floor.transform.SetParent(floorGroup.transform);
-		//Set the floor size as node size
 		floor.transform.localScale = nodeSetting.scale;
-		//Set the floor name with index
 		floor.name = (nodes.Count-1) + " - Floor";
-		//Save the floor object inside the node building it
 		node.build.floor = floor;
-		//Save the floot render inside the node building it
 		node.build.floorRender = floor.GetComponent<SpriteRenderer>();
-		//Set the floor color to it the replicator color
+		//Set this node color to leader color
 		node.build.floorRender.color = testing.leaderColor;
-		//Revert the previous node floor color back to normal
+		//Set the previous node color to default color
 		prev.build.floorRender.color = testing.floorColor;
 	}
 }
