@@ -483,7 +483,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   data:
     name: Keybindings
-    description: An basic key binding system.
+    description: An simple key binding system that utilize reflection.
     sceneId: 1
     indicator: {fileID: 1860254954}
 --- !u!1 &140898066
@@ -789,7 +789,7 @@ GameObject:
   - component: {fileID: 256454769}
   - component: {fileID: 256454771}
   m_Layer: 5
-  m_Name: Randomize Node Generation
+  m_Name: Randomize Room Generation
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -868,9 +868,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   data:
-    name: Randomize Node Generation
-    description: An project where an gameobject will randomly duplicate itself in
-      four direction.
+    name: Randomize Room Generation
+    description: Generate alot of room by replicate itself randomly then placing
+      down wall and bridge.
     sceneId: 2
     indicator: {fileID: 1781622468}
 --- !u!1 &369103680
@@ -4584,7 +4584,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Randomize Node Generation
+  m_text: Randomize Room Generation
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 38c5ece000f7dfa48b443c4631fd348f, type: 2}
   m_sharedMaterial: {fileID: -1644124483952720655, guid: 38c5ece000f7dfa48b443c4631fd348f,

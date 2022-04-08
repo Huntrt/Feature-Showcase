@@ -232,23 +232,23 @@ MonoBehaviour:
   m_GameObject: {fileID: 1441528816}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4fe142a45d0152e468466dadef0dd0eb, type: 3}
+  m_Script: {fileID: 11500000, guid: 3321522df63a8ba4dbbc31028bc13e84, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  testing:
-    autoGenerate: 1
-    autoSpeed: 0.1
-    floorColor: {r: 0.95, g: 0.95, b: 0.95, a: 1}
-    leaderColor: {r: 1, g: 0.4, b: 0.9019608, a: 1}
-    stuckColor: {r: 1, g: 0.3, b: 0.3, a: 1}
-  floorPrefab: {fileID: 4558046587480059573, guid: 8b54a26b9a8e8eb47bcbb1f5112ba983,
-    type: 3}
-  amount: 100
-  replicateAmount:
+  roomAmount: 100
+  customize:
+    scale: {x: 0.1, y: 0.1}
+    spacing: {x: 0.03, y: 0.03}
+    floorPrefab: {fileID: 4558046587480059573, guid: 8b54a26b9a8e8eb47bcbb1f5112ba983,
+      type: 3}
+    floorColor: {r: 1, g: 1, b: 1, a: 1}
+    leaderColor: {r: 1, g: 0.5, b: 0.97902083, a: 1}
+    stuckColor: {r: 1, g: 0.5019608, b: 0.5019608, a: 1}
+  replicateReq:
     min: 1
-    max: 2
+    max: 1
   replicateRate:
-    general: 20
+    general: 50
     useDirectional: 0
     up: 0
     down: 0
@@ -256,11 +256,10 @@ MonoBehaviour:
     right: 0
   completeGenerate: 0
   areGenerating: 0
-  nodeSetting:
-    scale: {x: 0.1, y: 0.1}
-    spacing: {x: 0.03, y: 0.03}
   currentLeaders: []
-  nodes: []
+  rooms: []
+  autoGenerate: 0
+  autoSpeed: 0
 --- !u!4 &1441528818
 Transform:
   m_ObjectHideFlags: 0
