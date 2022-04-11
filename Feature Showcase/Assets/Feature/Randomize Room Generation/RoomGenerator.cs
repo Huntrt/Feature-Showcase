@@ -17,7 +17,7 @@ public class RoomGenerator : MonoBehaviour
 	public event Action onGenerated;
 	public List<RoomData> currentLeaders = new List<RoomData>();
 	public List<RoomData> rooms = new List<RoomData>();
-	public bool autoGenerate; [Min(0.1f)] public float autoSpeed;
+	public bool autoGenerate; public float autoDelay;
 	GameObject floorGroup;
 
 #region Classes
@@ -31,12 +31,14 @@ public class RoomGenerator : MonoBehaviour
 	}
 	[Serializable] class Customize
 	{
-		public Vector2 scale, spacing;
+		[Header("Floor")]
 		public GameObject floorPrefab;
+		public Vector2 floorScale, floorSpacing;
 		public Color floorColor, leaderColor, stuckColor;
 	}
 	[Serializable] public class RoomData
 	{
+		public int index;
 		public Vector2 coordinates, position;
 		public int replicateCount;
 		public Vector2[] replicates = new Vector2[4];
@@ -79,38 +81,25 @@ public class RoomGenerator : MonoBehaviour
 
 	IEnumerator Replicate(RoomData leader, RoomData prev, int forceDirection = -1)
 	{
+	//? Preparing for replicate cycle
 		//This room are now the current leader
 		currentLeaders.Add(leader);
 		//Build floor at this leader
 		BuildFloor(leader, prev);
-		//! If THIS leader room are the final room (Improving later by only when truly complete)
-		if(rooms.Count >= roomAmount)
-		{
-			//Call the on generated event
-			onGenerated?.Invoke();
-			//Has completed generation
-			areGenerating = false; completeGenerate = true;
-			//Auto generate if wanted when complete the current generate
-			if(autoGenerate) {Invoke("Generate", autoSpeed);}
-		}
 		//Wait for an frame
 		yield return null;
-		//If THOSE leader room are the final room
-		if(rooms.Count >= roomAmount)
-		{
-			//Revert those room room floor color back to normal
-			leader.build.floorRender.color = customize.floorColor;
-		}
-	#region Random Replicate
+		//Reset all the last leader floor color back to normal
+		if(rooms.Count >= roomAmount) {leader.build.floorRender.color = customize.floorColor;}
+	//? Decide direction to replicate
 		//The result to see what direction will be replicate
 		bool[] result = new bool[4];
-		/// If this leader has been force to use an direction
+		//If this leader has been force to use an direction
 		if(forceDirection != -1)
 		{
 			//Set the result at direction has been force to true
 			result[forceDirection] = true;
 		}
-		/// Or else this leader need to randomize it own direction
+		//Or else this leader need to randomize it own direction
 		else
 		{
 			//Go through all the result need to randomize
@@ -133,51 +122,68 @@ public class RoomGenerator : MonoBehaviour
 				else {if(replicateRate.general >= chance) {result[d] = true;}}
 			}
 		}
-	#endregion
-		//Go through all 4 direction to check all of them
+		//Go through all 4 direction to check all of them for potential replicate
 		for (int d = 0; d < 4; d++) {CheckDirection(leader, DirectionVector(d), d, result[d]);}
 		//This room are no longer the current leader
 		currentLeaders.Remove(leader);
-		//Stop going further if this leader are an continuation room
+	//? If the leader are stuck
+		//Stop going if this leader are an continuation room
 		if(leader.continuation) {yield break;}
-		//Attemp to escape again at this leader if the leader is still stuck
+		//Attempt to escape again at this leader if the leader is still stuck
 		if(leader.stuck) {StartCoroutine(Replicate(leader, leader)); yield break;}
-	#region Check neighbour
-		//Go through all 4 direction of this leader when there sill neighbours to check
+	//? Finding neighbour
+		//Go through all 4 direction to check neighbours 
 		for (int d = 0; d < 4; d++)
 		{
-			//Findind room at four direction in leader
-			RoomData finded = FindroomAtCoordinates(leader.coordinates + DirectionVector(d));
-			//Save the opposite direction of current direction
-			int o = OppositeDirection(d);
-			//Only countine at this direction if it has room and that room neighbours is empty
-			if(finded == null) {continue;} if(leader.neighbours[d].filled) {continue;}
-			//Increase the neighbours count of both leader and finded
-			leader.neighboursCount++; finded.neighboursCount++;
-			//Set neighbour of this leader filled at current direction and finded room at opposite
-			leader.neighbours[d].filled = true; finded.neighbours[o].filled = true;
+			//Finding room in this direction of leader
+			RoomData finded = FindRoomAtCoordinates(leader.coordinates + DirectionVector(d));
+			//If has find an room that haven't has neighbours in this direction
+			if(finded != null) if(!leader.neighbours[d].filled)
+			{
+				//Increase the neighbours count of both leader and finded room
+				leader.neighboursCount++; finded.neighboursCount++;
+				//Set this direction neighbour of leader to filled
+				leader.neighbours[d].filled = true;
+				//Set the opposite direction neighbour of finded to filled
+				finded.neighbours[OppositeIndexDirection(d)].filled = true;
+			}
 		}
-		//When the neighbours are filled from all 4 side
-		if(leader.neighboursCount >= 4) 
+		//If this leader neighbours are filled from all 4 side
+		if(leader.neighboursCount >= 4)
 		{
-			//This leader is now stuck if it is the only leader
+			//This leader is now STUCK if it is the only leader
 			if(currentLeaders.Count <= 1) {leader.stuck = true;}
-			//? Don't attempt to replicate again if there is still leader (and reset color to default)
-			else if(currentLeaders.Count > 1) {leader.build.floorRender.color = customize.floorColor; yield break;}
+			// Stop this leader if there still more leader left
+			else if(currentLeaders.Count > 1) 
+			{
+				//Set the leader floor color back to normal
+				leader.build.floorRender.color = customize.floorColor;
+				yield break;
+			}
 		}
-	#endregion
+	//? This leader cycle complete
 		/// If haven't got enough room and this leader don't meet the minimum amount of replicate need
 		if(rooms.Count < roomAmount && leader.replicateCount < replicateReq.min)
 		{
 			//Replicate again at this leader 
 			StartCoroutine(Replicate(leader, leader));
 		}
+		/// If there are no more leader
+		if(currentLeaders.Count == 0)
+		{
+			//Call the on generated event
+			onGenerated?.Invoke();
+			//Has completed generation
+			areGenerating = false; completeGenerate = true;
+			//Auto generate if wanted when complete the current generate
+			if(autoGenerate) {Invoke("Generate", autoDelay);}
+		}
 	}
 
 	void CheckDirection(RoomData leader, Vector2 vector, int index, bool needReplicate)
 	{
-		//Get the next room at given direction's vector
-		RoomData nextRoom = FindroomAtCoordinates(leader.coordinates + vector);
+		//Get the next room at given direction
+		RoomData nextRoom = FindRoomAtCoordinates(leader.coordinates + vector);
 		//Set the leader neighbours coordinates as next room coordinates if it exist
 		if(nextRoom != null) {leader.neighbours[index].coord = nextRoom.coordinates;}
 		//Stop if this direction don't need replication
@@ -221,12 +227,14 @@ public class RoomGenerator : MonoBehaviour
 		newRoom.position = new Vector2
 		(
 			//Multiple the new room X coordinates with size + spacing
-			newRoom.coordinates.x * (customize.scale.x + customize.spacing.x),
+			newRoom.coordinates.x * (customize.floorScale.x + customize.floorSpacing.x),
 			//Multiple the new room Y coordinates with size + spacing
-			newRoom.coordinates.y * (customize.scale.y + customize.spacing.y)
+			newRoom.coordinates.y * (customize.floorScale.y + customize.floorSpacing.y)
 		);
 		//Add the new room into list
 		rooms.Add(newRoom);
+		//Update the new room's index
+		newRoom.index = rooms.Count-1;
 		//This leader has replicate an new room if it not an escape replicate
 		if(!leader.escape) {leader.replicateCount++;}
 		//Save the coordinates of thie new room leader has replicate
@@ -247,7 +255,7 @@ public class RoomGenerator : MonoBehaviour
 		return Vector2.zero;
 	}
 
-	int OppositeDirection(int i) 
+	int OppositeIndexDirection(int i) 
 	{
 		//Return the number opposite of index given base direction order
 		if(i==0){return 1;} if(i==1){return 0;} if(i==2){return 3;} if(i==3){return 2;}
@@ -257,7 +265,7 @@ public class RoomGenerator : MonoBehaviour
 #endregion
 
 #region Finder
-	public int GetIndexOfroom(RoomData room)
+	public int GetIndexOfRoom(RoomData room)
 	{
 		//Return the index of given room by go through all the rooms
 		for (int n = 0; n < rooms.Count; n++) {if(rooms[n] == room) {return n;}}
@@ -265,7 +273,7 @@ public class RoomGenerator : MonoBehaviour
 		return -1;
 	}
 
-	public RoomData FindroomAtIndex(int index)
+	public RoomData FindRoomAtIndex(int index)
 	{
 		//Return the room data of room that has the same position as given by go through all the rooms
 		for (int n = 0; n < rooms.Count; n++) {if(n == index) {return rooms[n];}}
@@ -273,7 +281,7 @@ public class RoomGenerator : MonoBehaviour
 		return null;
 	}
 
-	public RoomData FindroomAtCoordinates(Vector2 coordinates)
+	public RoomData FindRoomAtCoordinates(Vector2 coordinates)
 	{
 		//Return the room data of room that has the same coordinates as given by go through all the rooms
 		for (int n = 0; n < rooms.Count; n++) {if(rooms[n].coordinates == coordinates) {return rooms[n];}}
@@ -281,7 +289,7 @@ public class RoomGenerator : MonoBehaviour
 		return null;
 	}
 
-	public RoomData FindroomAtPosition(Vector2 position)
+	public RoomData FindRoomAtPosition(Vector2 position)
 	{
 		//Return the room data of room that has the same position as given by go through all the rooms
 		for (int n = 0; n < rooms.Count; n++) {if(rooms[n].position == position) {return rooms[n];}}
@@ -297,7 +305,7 @@ public class RoomGenerator : MonoBehaviour
 		//Build the floor at the room given position
 		GameObject floor = Instantiate(customize.floorPrefab, room.position, Quaternion.identity);
 		floor.transform.SetParent(floorGroup.transform);
-		floor.transform.localScale = customize.scale;
+		floor.transform.localScale = customize.floorScale;
 		floor.name = (rooms.Count-1) + " - Floor";
 		room.build.floor = floor;
 		room.build.floorRender = floor.GetComponent<SpriteRenderer>();

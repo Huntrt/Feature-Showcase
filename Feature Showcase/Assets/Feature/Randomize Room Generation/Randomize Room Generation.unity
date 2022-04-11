@@ -237,13 +237,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   roomAmount: 100
   customize:
-    scale: {x: 0.1, y: 0.1}
-    spacing: {x: 0.03, y: 0.03}
     floorPrefab: {fileID: 4558046587480059573, guid: 8b54a26b9a8e8eb47bcbb1f5112ba983,
       type: 3}
+    floorScale: {x: 0.1, y: 0.1}
+    floorSpacing: {x: 0.03, y: 0.03}
     floorColor: {r: 1, g: 1, b: 1, a: 1}
-    leaderColor: {r: 1, g: 0.5, b: 0.97902083, a: 1}
-    stuckColor: {r: 1, g: 0.5019608, b: 0.5019608, a: 1}
+    leaderColor: {r: 0.4150327, g: 1, b: 0.2980392, a: 1}
+    stuckColor: {r: 1, g: 0.39999998, b: 0.39999998, a: 1}
   replicateReq:
     min: 1
     max: 1
@@ -259,7 +259,7 @@ MonoBehaviour:
   currentLeaders: []
   rooms: []
   autoGenerate: 1
-  autoSpeed: 0.1
+  autoDelay: 0
 --- !u!4 &1441528818
 Transform:
   m_ObjectHideFlags: 0
