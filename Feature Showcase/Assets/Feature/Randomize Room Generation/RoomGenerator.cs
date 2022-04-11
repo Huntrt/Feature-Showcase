@@ -6,7 +6,7 @@ using System;
 public class RoomGenerator : MonoBehaviour
 {
 	public int roomAmount;
-	[SerializeField] 
+	[SerializeField]
 	Customize customize = new Customize();
 	[Tooltip("The minimum and maximum amount of replicate an room need to do")]
 	public ReplicateRequirement replicateReq = new ReplicateRequirement();
@@ -104,36 +104,37 @@ public class RoomGenerator : MonoBehaviour
 	#region Random Replicate
 		//The result to see what direction will be replicate
 		bool[] result = new bool[4];
-		//If this leader has been force to use an direction
+		/// If this leader has been force to use an direction
 		if(forceDirection != -1)
 		{
 			//Set the result at direction has been force to true
 			result[forceDirection] = true;
 		}
-		//If this leader need to randomize it own direction
+		/// Or else this leader need to randomize it own direction
 		else
 		{
 			//Go through all the result need to randomize
-			for (int c = 0; c < result.Length; c++)
+			for (int a = 0; a < result.Length; a++)
 			{
 				//The randomize chance of this cycle
 				float chance = UnityEngine.Random.Range(0f, 100f);
+				//Shuffle the direction that will receive result
+				int d = UnityEngine.Random.Range(0,4);
 				//If using the directional rate
 				if(replicateRate.useDirectional)
 				{
 					//@ Set the result base on rate of each direction compare to chance
-					if(c == 0 && replicateRate.up    >= chance) {result[c] = true;}
-					if(c == 1 && replicateRate.down  >= chance) {result[c] = true;}
-					if(c == 2 && replicateRate.left  >= chance) {result[c] = true;}
-					if(c == 3 && replicateRate.right >= chance) {result[c] = true;}
+					if(d == 0 && replicateRate.up    >= chance) {result[d] = true;}
+					if(d == 1 && replicateRate.down  >= chance) {result[d] = true;}
+					if(d == 2 && replicateRate.left  >= chance) {result[d] = true;}
+					if(d == 3 && replicateRate.right >= chance) {result[d] = true;}
 				}
 				//Return the result base on general the rate compare to chance
-				else {if(replicateRate.general >= chance) {result[c] = true;}}
+				else {if(replicateRate.general >= chance) {result[d] = true;}}
 			}
 		}
 	#endregion
-		//! Shuffle drection
-		//Go through all 4 direction to check each of them
+		//Go through all 4 direction to check all of them
 		for (int d = 0; d < 4; d++) {CheckDirection(leader, DirectionVector(d), d, result[d]);}
 		//This room are no longer the current leader
 		currentLeaders.Remove(leader);
@@ -175,10 +176,10 @@ public class RoomGenerator : MonoBehaviour
 
 	void CheckDirection(RoomData leader, Vector2 vector, int index, bool needReplicate)
 	{
-		//Get the next room to replicate that are at this leader direction
-		RoomData nextroom = FindroomAtCoordinates(leader.coordinates + vector);
+		//Get the next room at given direction's vector
+		RoomData nextRoom = FindroomAtCoordinates(leader.coordinates + vector);
 		//Set the leader neighbours coordinates as next room coordinates if it exist
-		if(nextroom != null) {leader.neighbours[index].coord = nextroom.coordinates;}
+		if(nextRoom != null) {leader.neighbours[index].coord = nextRoom.coordinates;}
 		//Stop if this direction don't need replication
 		if(!needReplicate) {return;}
 		//! If the leader are stuck
@@ -186,14 +187,14 @@ public class RoomGenerator : MonoBehaviour
 		{
 			leader.build.floorRender.color = customize.stuckColor;
 			//If there already an room ar the next room
-			if(nextroom != null)
+			if(nextRoom != null)
 			{
 				//The leader has continue escape attempt at the next room
 				leader.continuation = true;
 				//The leader transfer it stuck to the next room
-				leader.stuck = false; nextroom.stuck = true; 
+				leader.stuck = false; nextRoom.stuck = true; 
 				//Try to escape at the next room with the same direction
-				StartCoroutine(Replicate(nextroom, leader, index)); return;
+				StartCoroutine(Replicate(nextRoom, leader, index)); return;
 			}
 			//If there are no room at the next room
 			else
@@ -207,31 +208,31 @@ public class RoomGenerator : MonoBehaviour
 		//If the leader are not stuck
 		if(!leader.stuck)
 		{
-			//Ignore the max replicate if this leader is an escape room
+			//Ignore the max replicate restrainy if this leader is an ESCAPE room
 			if(!leader.escape && leader.replicateCount >= replicateReq.max) {return;}
-			//Stop if the has reach the needed room amount of next room are not empty
-			if(rooms.Count >= roomAmount || nextroom != null) {return;}
+			/// Stop if has reach the needed amount of room or next room are not empty
+			if(rooms.Count >= roomAmount || nextRoom != null) {return;}
 		}
 		//Create an new temp room
-		RoomData newroom = new RoomData();
+		RoomData newRoom = new RoomData();
 		//Set the new room coordiates as the leader coordinates increase with this direction
-		newroom.coordinates = leader.coordinates + vector;
+		newRoom.coordinates = leader.coordinates + vector;
 		//Set the new room's position
-		newroom.position = new Vector2
+		newRoom.position = new Vector2
 		(
 			//Multiple the new room X coordinates with size + spacing
-			newroom.coordinates.x * (customize.scale.x + customize.spacing.x),
+			newRoom.coordinates.x * (customize.scale.x + customize.spacing.x),
 			//Multiple the new room Y coordinates with size + spacing
-			newroom.coordinates.y * (customize.scale.y + customize.spacing.y)
+			newRoom.coordinates.y * (customize.scale.y + customize.spacing.y)
 		);
 		//Add the new room into list
-		rooms.Add(newroom);
+		rooms.Add(newRoom);
 		//This leader has replicate an new room if it not an escape replicate
 		if(!leader.escape) {leader.replicateCount++;}
 		//Save the coordinates of thie new room leader has replicate
-		leader.replicates[index] = newroom.coordinates;
+		leader.replicates[index] = newRoom.coordinates;
 		//Begin replicate more at the new room with previous room being leader
-		StartCoroutine(Replicate(newroom, leader));
+		StartCoroutine(Replicate(newRoom, leader));
 	}
 
 #region Converter

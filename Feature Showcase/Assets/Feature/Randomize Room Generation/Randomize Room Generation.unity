@@ -258,8 +258,8 @@ MonoBehaviour:
   areGenerating: 0
   currentLeaders: []
   rooms: []
-  autoGenerate: 0
-  autoSpeed: 0
+  autoGenerate: 1
+  autoSpeed: 0.1
 --- !u!4 &1441528818
 Transform:
   m_ObjectHideFlags: 0
