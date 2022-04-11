@@ -15,6 +15,7 @@
 
    [Rect Transform]
    - The "Pivot" variable are where the text will be expand away from.
+		+ Pivot: 0 = [Down] [Left] | 0.5 = [Middle] | 1 = [Up] [Right]
 
    [Horizontal Layout Group]
    - "Padding" make the text space away from border.
