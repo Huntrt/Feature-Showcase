@@ -7,7 +7,8 @@
 	▪ Bridge @doing
 		✓ Position
 		▪ Rotation
-	▪ Wall #next
+	▪ Wall @next
+	▪ In-Game setting
 ▪ Keybinder @next
 	✓ Reflection
 	▪ Arrays

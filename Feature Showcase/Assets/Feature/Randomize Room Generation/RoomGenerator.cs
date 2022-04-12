@@ -18,7 +18,7 @@ public class RoomGenerator : MonoBehaviour
 	public List<RoomData> currentLeaders = new List<RoomData>();
 	public List<RoomData> rooms = new List<RoomData>();
 	public bool autoGenerate; public float autoDelay;
-	GameObject floorGroup;
+	GameObject floorGroup, bridgeGroup, wallGroup;
 
 #region Classes
 	[Serializable] public class ReplicateRequirement {[Range(1,4)] public int min, max;}
@@ -45,16 +45,13 @@ public class RoomGenerator : MonoBehaviour
 		public int index;
 		public Vector2 coordinates, position;
 		public int replicateCount;
-		public Vector2[] replicates = new Vector2[4];
+		[Serializable] public class Replicate {public Vector2 coord, pos;}
+		public Replicate[] replicates = new Replicate[] {new Replicate(),new Replicate(),new Replicate(),new Replicate()};
 		public int neighboursCount;
+		[Serializable] public class Neighbours {public bool filled; public Vector2 coord, pos;}
 		public Neighbours[] neighbours = new Neighbours[] {new Neighbours(),new Neighbours(),new Neighbours(),new Neighbours()};
 		public Building build = new Building();
 		[HideInInspector] public bool stuck, continuation, escape;
-		[Serializable] public class Neighbours 
-		{
-			public bool filled;
-			public Vector2 coord;
-		}
 		[Serializable] public class Building 
 		{
 			public GameObject floor, bridge, wall;
@@ -74,13 +71,11 @@ public class RoomGenerator : MonoBehaviour
 	{
 		//Only generating when not generate
 		if(areGenerating == true) {return;}
+		//Setting build
+		SetupBuild();
 		//Are now generating
 		areGenerating = true;
-		//Destroy the old room group if it exist
-		if(floorGroup != null) {Destroy(floorGroup);}
-		//Create an new group object for floor then edit it name
-		floorGroup = new GameObject(); floorGroup.name = "Floor Group";
-		//No longer has generated
+		//Generate are no longer complete
 		completeGenerate = false;
 		//Renew the room list
 		rooms.Clear(); rooms = new List<RoomData>();
@@ -183,18 +178,8 @@ public class RoomGenerator : MonoBehaviour
 			//Replicate again at this leader 
 			StartCoroutine(Replicate(leader, leader));
 		}
-		/// If there are no more leader
-		if(currentLeaders.Count == 0)
-		{
-			//Call the on generated event
-			onGenerated?.Invoke();
-			//Has completed generation
-			areGenerating = false; completeGenerate = true;
-			//Building bridge
-			BuildBridge();
-			//Auto generate if wanted when complete the current generate
-			if(autoGenerate) {Invoke("Generate", autoDelay);}
-		}
+		/// If there are no more leader then generating are finish
+		if(currentLeaders.Count == 0) {GeneratingFinish();}
 	#endregion
 	}
 
@@ -202,8 +187,14 @@ public class RoomGenerator : MonoBehaviour
 	{
 		//Get the next room at given direction
 		RoomData nextRoom = FindRoomAtCoordinates(leader.coordinates + vector);
-		//Set the leader neighbours coordinates as next room coordinates if it exist
-		if(nextRoom != null) {leader.neighbours[index].coord = nextRoom.coordinates;}
+		//If the next room exist
+		if(nextRoom != null) 
+		{
+			//Save the next room coordinates as leader neighbours coordinates
+			leader.neighbours[index].coord = nextRoom.coordinates;
+			//Save the next room position as leader neighbours position
+			leader.neighbours[index].pos = nextRoom.position;
+		}
 		//Stop if this direction don't need replication
 		if(!needReplicate) {return;}
 		//! If the leader are stuck
@@ -255,12 +246,24 @@ public class RoomGenerator : MonoBehaviour
 		newRoom.index = rooms.Count-1;
 		//This leader has replicate an new room if it not an escape replicate
 		if(!leader.escape) {leader.replicateCount++;}
-		//Save the coordinates of thie new room leader has replicate
-		leader.replicates[index] = newRoom.coordinates;
-		//Set up bridge between leader and the new room at current direction
-		SetupBridge(leader, newRoom, index);
+		//Save the coordinates of the new room leader has replicate
+		leader.replicates[index].coord = newRoom.coordinates;
+		//Save the position of the new room leader has replicate
+		leader.replicates[index].pos = newRoom.position;
 		//Begin replicate more at the new room with previous room being leader
 		StartCoroutine(Replicate(newRoom, leader));
+	}
+
+	void GeneratingFinish()
+	{
+		//Call the on generated event
+		onGenerated?.Invoke();
+		//Has completed generation
+		areGenerating = false; completeGenerate = true;
+		//Setting up bridge
+		SetupBridge();
+		//Auto generate if wanted when complete the current generate
+		if(autoGenerate) {Invoke("Generate", autoDelay);}
 	}
 
 #endregion
@@ -320,52 +323,84 @@ public class RoomGenerator : MonoBehaviour
 	}
 #endregion
 
+#region Build
+	void SetupBuild()
+	{
+		//Destroy the old floor group if it exist
+		if(floorGroup != null) {Destroy(floorGroup);}
+		//Create an new group object for floor then edit it name
+		floorGroup = new GameObject(); floorGroup.name = "Floor Group";
+		//Destroy the old bridge group if it exist
+		if(bridgeGroup != null) {Destroy(bridgeGroup);}
+		//Create an new group object for bridge then edit it name
+		bridgeGroup = new GameObject(); bridgeGroup.name = "Bridge Group";
+	}
+
 	void BuildFloor(RoomData room, RoomData prev)
 	{
 		//Don't build floor if it has already been build
 		if(room.build.floor != null) {return;}
 		//Build the floor at the room given position
 		GameObject floor = Instantiate(customize.floorPrefab, room.position, Quaternion.identity);
+		//@ Setup the newly floor bridge
 		floor.transform.SetParent(floorGroup.transform);
 		floor.transform.localScale = customize.floorScale;
 		floor.name = (rooms.Count-1) + " - Floor";
 		room.build.floor = floor;
 		room.build.floorRender = floor.GetComponent<SpriteRenderer>();
-		//Set this room color to leader color
+		//Set this room current color to leader color
 		room.build.floorRender.color = customize.leaderColor;
 		//Set the previous room color to default color
 		prev.build.floorRender.color = customize.floorColor;
 	}
 
-	void SetupBridge(RoomData leader, RoomData next, int direction)
+	void SetupBridge()
 	{
-		//Set the position of the bridge at given diraction
-		leader.build.bridgePosition[direction] = new Vector2
-		(
-			//Get the middle point of the leader and next node's X axis
-			leader.position.x + (next.position.x - leader.position.x) /2,
-			//Get the middle point of the leader and next node's Y axis
-			leader.position.y + (next.position.y - leader.position.y) /2
-		);
-	}
-
-	void BuildBridge()
-	{
-		//Go through all the rooms then go through each of the room bridge
-		for (int r = 0; r < rooms.Count; r++) for (int b = 0; b < 4; b++)
+		//Go through all the room
+		for (int r = 0; r < rooms.Count; r++)
 		{
-			//Get the bridge position
-			Vector2 pos = rooms[r].build.bridgePosition[b];
-			//If th bridge has position
-			if(pos != Vector2.zero)
+			//The arry of next position
+			Vector2[] next = new Vector2[4];
+			//Get the next position as each of this rooms's replicate position
+			for (int n = 0; n < rooms[r].replicates.Length; n++) {next[n] = rooms[r].replicates[n].pos;}
+			//Go through all the next position to see if there any position to use
+			for (int e = 0; e < next.Length; e++) if(next[e] != Vector2.zero)
 			{
-				//Create the bridge object at position with no rotation
-				GameObject brd = Instantiate(customize.bridgePrefab, pos, Quaternion.identity);
-				//Set the bridge object scaling
-				brd.transform.localScale = customize.bridgeScale;
-				//Get the bridge object sprite renderer
-				rooms[r].build.bridgeRender = brd.GetComponent<SpriteRenderer>();
+				//Set position of the bridge in direction
+				rooms[r].build.bridgePosition[e] = new Vector2
+				(
+					//Get the middle X axis point of the current and next position
+					rooms[r].position.x + (next[e].x - rooms[r].position.x) / 2,
+					//Get the middle Y axis point of the current and next position
+					rooms[r].position.y + (next[e].y - rooms[r].position.y) / 2
+				);
+				//Decide the rotation of this bridge
+				float rot = 0; switch(e)
+				{
+					//@ Set rotation base on direction index given
+					case 0: rot = 0  ; break; 
+					case 1: rot = 180; break; 
+					case 2: rot = 90 ; break;
+					case 3: rot = 270; break;
+				}
+				//Build the bridge of this room at room position with given rotation
+				BuildBridge(rooms[r], rooms[r].build.bridgePosition[e], rot);
 			}
 		}
 	}
+
+	void BuildBridge(RoomData room , Vector2 pos, float rot)
+	{
+		//Create the bridge object at position with the current index direction as rotation
+		GameObject bridge = Instantiate(customize.bridgePrefab, pos, Quaternion.Euler(0,0,rot));
+		//@ Setup the newly created bridge
+		bridge.transform.SetParent(bridgeGroup.transform);
+		bridge.transform.localScale = customize.bridgeScale;
+		bridge.name = (room.index + 1) + "'s Bridge";
+		room.build.bridge = bridge;
+		room.build.bridgeRender = bridge.GetComponent<SpriteRenderer>();
+		//Set the bridge color to default
+		room.build.bridgeRender.color = customize.bridgeColor;
+	}
+#endregion
 }

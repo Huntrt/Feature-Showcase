@@ -244,10 +244,10 @@ MonoBehaviour:
     floorColor: {r: 1, g: 1, b: 1, a: 1}
     leaderColor: {r: 0.4150327, g: 1, b: 0.2980392, a: 1}
     stuckColor: {r: 1, g: 0.39999998, b: 0.39999998, a: 1}
-    bridgePrefab: {fileID: 4558046587480059573, guid: 8b54a26b9a8e8eb47bcbb1f5112ba983,
+    bridgePrefab: {fileID: 369311246715796509, guid: a8cbcfcfe80c63c41a47c25cb98db4f9,
       type: 3}
-    bridgeScale: {x: 0.05, y: 0.05}
-    bridgeColor: {r: 0.85, g: 0.85, b: 0.85, a: 1}
+    bridgeScale: {x: 0.05, y: 0.18}
+    bridgeColor: {r: 0, g: 0.07612991, b: 1, a: 1}
   replicateReq:
     min: 1
     max: 4
@@ -271,10 +271,10 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1441528816}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: 0, y: -0, z: 0.7071068, w: -0.7071068}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 1
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 270}
