@@ -247,7 +247,7 @@ MonoBehaviour:
     bridgePrefab: {fileID: 369311246715796509, guid: a8cbcfcfe80c63c41a47c25cb98db4f9,
       type: 3}
     bridgeScale: {x: 0.05, y: 0.18}
-    bridgeColor: {r: 0, g: 0.07612991, b: 1, a: 1}
+    bridgeColor: {r: 0.8, g: 0.8, b: 0.8, a: 1}
   replicateReq:
     min: 1
     max: 4
@@ -262,7 +262,7 @@ MonoBehaviour:
   areGenerating: 0
   currentLeaders: []
   rooms: []
-  autoGenerate: 0
+  autoGenerate: 1
   autoDelay: 0
 --- !u!4 &1441528818
 Transform:

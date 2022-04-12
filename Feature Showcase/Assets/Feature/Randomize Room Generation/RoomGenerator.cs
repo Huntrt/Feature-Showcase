@@ -356,36 +356,34 @@ public class RoomGenerator : MonoBehaviour
 
 	void SetupBridge()
 	{
-		//Go through all the room
-		for (int r = 0; r < rooms.Count; r++)
+		//Go through all the room to go through 4 direction of each room
+		for (int r = 0; r < rooms.Count; r++) for (int d = 0; d < 4; d++)
 		{
-			//The arry of next position
-			Vector2[] next = new Vector2[4];
-			//Get the next position as each of this rooms's replicate position
-			for (int n = 0; n < rooms[r].replicates.Length; n++) {next[n] = rooms[r].replicates[n].pos;}
-			//Go through all the next position to see if there any position to use
-			for (int e = 0; e < next.Length; e++) if(next[e] != Vector2.zero)
+			//The next position of this direction
+			Vector2 next = Vector2.zero;
+			//Set the next position at this direction's replicate position
+			next = rooms[r].replicates[d].pos;
+			//Stop if the next positon are zero
+			if(next == Vector2.zero) {continue;}
+			//Set position of the bridge in direction
+			rooms[r].build.bridgePosition[d] = new Vector2
+			(
+				//Get the middle X axis point of the current and next position
+				rooms[r].position.x + (next.x - rooms[r].position.x) / 2,
+				//Get the middle Y axis point of the current and next position
+				rooms[r].position.y + (next.y - rooms[r].position.y) / 2
+			);
+			//Decide the rotation of this bridge
+			float rot = 0; switch(d)
 			{
-				//Set position of the bridge in direction
-				rooms[r].build.bridgePosition[e] = new Vector2
-				(
-					//Get the middle X axis point of the current and next position
-					rooms[r].position.x + (next[e].x - rooms[r].position.x) / 2,
-					//Get the middle Y axis point of the current and next position
-					rooms[r].position.y + (next[e].y - rooms[r].position.y) / 2
-				);
-				//Decide the rotation of this bridge
-				float rot = 0; switch(e)
-				{
-					//@ Set rotation base on direction index given
-					case 0: rot = 0  ; break; 
-					case 1: rot = 180; break; 
-					case 2: rot = 90 ; break;
-					case 3: rot = 270; break;
-				}
-				//Build the bridge of this room at room position with given rotation
-				BuildBridge(rooms[r], rooms[r].build.bridgePosition[e], rot);
+				//@ Set rotation base on direction index given
+				case 0: rot = 0  ; break; 
+				case 1: rot = 180; break; 
+				case 2: rot = 90 ; break;
+				case 3: rot = 270; break;
 			}
+			//Build the bridge of this room at room position with given rotation
+			BuildBridge(rooms[r], rooms[r].build.bridgePosition[d], rot);
 		}
 	}
 
