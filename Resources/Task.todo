@@ -8,7 +8,14 @@
 		✓ Position
 		▪ Rotation
 	▪ Wall #next
+▪ Keybinder @next
+	✓ Reflection
+	▪ Arrays
 ▪ Pixel Perfect Gameview
 ▪ A* Pathfindidng
 ▪ Cellular Automata
 ▪ Inverse Kinematic 
+
+More:
+	▪ Host on github page
+	▪ Add title bar above feature demo
