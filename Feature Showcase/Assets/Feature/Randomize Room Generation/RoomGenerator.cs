@@ -35,6 +35,10 @@ public class RoomGenerator : MonoBehaviour
 		public GameObject floorPrefab;
 		public Vector2 floorScale, floorSpacing;
 		public Color floorColor, leaderColor, stuckColor;
+		[Header("Bridge")]
+		public GameObject bridgePrefab;
+		public Vector2 bridgeScale;
+		public Color bridgeColor;
 	}
 	[Serializable] public class RoomData
 	{
@@ -43,15 +47,20 @@ public class RoomGenerator : MonoBehaviour
 		public int replicateCount;
 		public Vector2[] replicates = new Vector2[4];
 		public int neighboursCount;
-		[Serializable] public class Neighbours {public bool filled; public Vector2 coord;}
 		public Neighbours[] neighbours = new Neighbours[] {new Neighbours(),new Neighbours(),new Neighbours(),new Neighbours()};
+		public Building build = new Building();
+		[HideInInspector] public bool stuck, continuation, escape;
+		[Serializable] public class Neighbours 
+		{
+			public bool filled;
+			public Vector2 coord;
+		}
 		[Serializable] public class Building 
 		{
 			public GameObject floor, bridge, wall;
-			public SpriteRenderer floorRender; 
+			public SpriteRenderer floorRender, bridgeRender;
+			public Vector2[] bridgePosition = new Vector2[4];
 		} 
-		public Building build = new Building();
-		[HideInInspector] public bool stuck, continuation, escape;
 	}
 #endregion
 
@@ -79,9 +88,11 @@ public class RoomGenerator : MonoBehaviour
 		rooms.Add(new RoomData()); StartCoroutine(Replicate(rooms[0], rooms[0]));
 	}
 
+#region Replicating
+
 	IEnumerator Replicate(RoomData leader, RoomData prev, int forceDirection = -1)
 	{
-	//? Preparing for replicate cycle
+	#region Preparing for replicate cycle
 		//This room are now the current leader
 		currentLeaders.Add(leader);
 		//Build floor at this leader
@@ -90,7 +101,8 @@ public class RoomGenerator : MonoBehaviour
 		yield return null;
 		//Reset all the last leader floor color back to normal
 		if(rooms.Count >= roomAmount) {leader.build.floorRender.color = customize.floorColor;}
-	//? Decide direction to replicate
+	#endregion
+	#region Decide direction to replicate
 		//The result to see what direction will be replicate
 		bool[] result = new bool[4];
 		//If this leader has been force to use an direction
@@ -126,12 +138,14 @@ public class RoomGenerator : MonoBehaviour
 		for (int d = 0; d < 4; d++) {CheckDirection(leader, DirectionVector(d), d, result[d]);}
 		//This room are no longer the current leader
 		currentLeaders.Remove(leader);
-	//? If the leader are stuck
+	#endregion
+	#region If the leader are stuck
 		//Stop going if this leader are an continuation room
 		if(leader.continuation) {yield break;}
 		//Attempt to escape again at this leader if the leader is still stuck
 		if(leader.stuck) {StartCoroutine(Replicate(leader, leader)); yield break;}
-	//? Finding neighbour
+	#endregion
+	#region Finding neighbour
 		//Go through all 4 direction to check neighbours 
 		for (int d = 0; d < 4; d++)
 		{
@@ -161,7 +175,8 @@ public class RoomGenerator : MonoBehaviour
 				yield break;
 			}
 		}
-	//? This leader cycle complete
+	#endregion
+	#region This leader cycle complete
 		/// If haven't got enough room and this leader don't meet the minimum amount of replicate need
 		if(rooms.Count < roomAmount && leader.replicateCount < replicateReq.min)
 		{
@@ -175,9 +190,12 @@ public class RoomGenerator : MonoBehaviour
 			onGenerated?.Invoke();
 			//Has completed generation
 			areGenerating = false; completeGenerate = true;
+			//Building bridge
+			BuildBridge();
 			//Auto generate if wanted when complete the current generate
 			if(autoGenerate) {Invoke("Generate", autoDelay);}
 		}
+	#endregion
 	}
 
 	void CheckDirection(RoomData leader, Vector2 vector, int index, bool needReplicate)
@@ -239,9 +257,13 @@ public class RoomGenerator : MonoBehaviour
 		if(!leader.escape) {leader.replicateCount++;}
 		//Save the coordinates of thie new room leader has replicate
 		leader.replicates[index] = newRoom.coordinates;
+		//Set up bridge between leader and the new room at current direction
+		SetupBridge(leader, newRoom, index);
 		//Begin replicate more at the new room with previous room being leader
 		StartCoroutine(Replicate(newRoom, leader));
 	}
+
+#endregion
 
 #region Converter
 	Vector2 DirectionVector(int index)
@@ -313,5 +335,37 @@ public class RoomGenerator : MonoBehaviour
 		room.build.floorRender.color = customize.leaderColor;
 		//Set the previous room color to default color
 		prev.build.floorRender.color = customize.floorColor;
+	}
+
+	void SetupBridge(RoomData leader, RoomData next, int direction)
+	{
+		//Set the position of the bridge at given diraction
+		leader.build.bridgePosition[direction] = new Vector2
+		(
+			//Get the middle point of the leader and next node's X axis
+			leader.position.x + (next.position.x - leader.position.x) /2,
+			//Get the middle point of the leader and next node's Y axis
+			leader.position.y + (next.position.y - leader.position.y) /2
+		);
+	}
+
+	void BuildBridge()
+	{
+		//Go through all the rooms then go through each of the room bridge
+		for (int r = 0; r < rooms.Count; r++) for (int b = 0; b < 4; b++)
+		{
+			//Get the bridge position
+			Vector2 pos = rooms[r].build.bridgePosition[b];
+			//If th bridge has position
+			if(pos != Vector2.zero)
+			{
+				//Create the bridge object at position with no rotation
+				GameObject brd = Instantiate(customize.bridgePrefab, pos, Quaternion.identity);
+				//Set the bridge object scaling
+				brd.transform.localScale = customize.bridgeScale;
+				//Get the bridge object sprite renderer
+				rooms[r].build.bridgeRender = brd.GetComponent<SpriteRenderer>();
+			}
+		}
 	}
 }
