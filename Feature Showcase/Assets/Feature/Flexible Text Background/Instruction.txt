@@ -14,8 +14,10 @@
 4. Change the following content for more [background] customization:
 
    [Rect Transform]
-   - The "Pivot" variable are where the text will be expand away from.
-		+ Pivot: 0 = [Down] [Left] | 0.5 = [Middle] | 1 = [Up] [Right]
+   - The "Pivot" variable are where the text will be expand away from. 
+		0   =  Left  - Down
+		0.5 =  Middle
+		1   =  Right - [Up
 
    [Horizontal Layout Group]
    - "Padding" make the text space away from border.
