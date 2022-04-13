@@ -46,7 +46,7 @@ public class RoomGenerator : MonoBehaviour
 		public Vector2 coordinates, position;
 		public int replicateCount;
 		[Serializable] public class Replicate {public Vector2 coord, pos;}
-		public Replicate[] replicates = new Replicate[] {new Replicate(),new Replicate(),new Replicate(),new Replicate()};
+		public Replicate[] replicated = new Replicate[] {new Replicate(),new Replicate(),new Replicate(),new Replicate()};
 		public int neighboursCount;
 		[Serializable] public class Neighbours {public bool filled; public Vector2 coord, pos;}
 		public Neighbours[] neighbours = new Neighbours[] {new Neighbours(),new Neighbours(),new Neighbours(),new Neighbours()};
@@ -56,7 +56,7 @@ public class RoomGenerator : MonoBehaviour
 		{
 			public GameObject floor, bridge, wall;
 			public SpriteRenderer floorRender, bridgeRender;
-			public Vector2[] bridgePosition = new Vector2[4];
+			public Vector2[] bridgePos = new Vector2[4];
 		} 
 	}
 #endregion
@@ -149,12 +149,16 @@ public class RoomGenerator : MonoBehaviour
 			//If has find an room that haven't has neighbours in this direction
 			if(finded != null) if(!leader.neighbours[d].filled)
 			{
-				//Increase the neighbours count of both leader and finded room
+				//Both leader and finded room neighbours increased
 				leader.neighboursCount++; finded.neighboursCount++;
-				//Set this direction neighbour of leader to filled
-				leader.neighbours[d].filled = true;
-				//Set the opposite direction neighbour of finded to filled
-				finded.neighbours[OppositeIndexDirection(d)].filled = true;
+				//Get the neighbours at current direction of leader room
+				RoomData.Neighbours ld = leader.neighbours[d]; 
+				//Get the neighbours at opposite direction of finded room
+				RoomData.Neighbours fo = finded.neighbours[OppositeIndexDirection(d)];
+				//Leader neighbours are filled then set it coordinates and position at FINDED
+				ld.filled = true; ld.coord = finded.coordinates; ld.pos = finded.position;
+				//Finded neighbours are filled then set it coordinates and position at LEADER
+				fo.filled = true; fo.coord = leader.coordinates; fo.pos = leader.position;
 			}
 		}
 		//If this leader neighbours are filled from all 4 side
