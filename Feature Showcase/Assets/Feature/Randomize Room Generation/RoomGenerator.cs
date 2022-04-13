@@ -39,6 +39,7 @@ public class RoomGenerator : MonoBehaviour
 		public GameObject bridgePrefab;
 		public Vector2 bridgeScale;
 		public Color bridgeColor;
+		public bool connectMode = true;
 	}
 	[Serializable] public class RoomData
 	{
@@ -191,14 +192,6 @@ public class RoomGenerator : MonoBehaviour
 	{
 		//Get the next room at given direction
 		RoomData nextRoom = FindRoomAtCoordinates(leader.coordinates + vector);
-		//If the next room exist
-		if(nextRoom != null) 
-		{
-			//Save the next room coordinates as leader neighbours coordinates
-			leader.neighbours[index].coord = nextRoom.coordinates;
-			//Save the next room position as leader neighbours position
-			leader.neighbours[index].pos = nextRoom.position;
-		}
 		//Stop if this direction don't need replication
 		if(!needReplicate) {return;}
 		//! If the leader are stuck
@@ -251,9 +244,9 @@ public class RoomGenerator : MonoBehaviour
 		//This leader has replicate an new room if it not an escape replicate
 		if(!leader.escape) {leader.replicateCount++;}
 		//Save the coordinates of the new room leader has replicate
-		leader.replicates[index].coord = newRoom.coordinates;
+		leader.replicated[index].coord = newRoom.coordinates;
 		//Save the position of the new room leader has replicate
-		leader.replicates[index].pos = newRoom.position;
+		leader.replicated[index].pos = newRoom.position;
 		//Begin replicate more at the new room with previous room being leader
 		StartCoroutine(Replicate(newRoom, leader));
 	}
@@ -360,23 +353,19 @@ public class RoomGenerator : MonoBehaviour
 
 	void SetupBridge()
 	{
+		//List of position bridge as builded
+		List<Vector2> buildedPos = new List<Vector2>();
 		//Go through all the room to go through 4 direction of each room
 		for (int r = 0; r < rooms.Count; r++) for (int d = 0; d < 4; d++)
 		{
-			//The next position of this direction
-			Vector2 next = Vector2.zero;
-			//Set the next position at this direction's replicate position
-			next = rooms[r].replicates[d].pos;
+			//Get room position and empty next position in this direction
+			Vector2 room = rooms[r].position; Vector2 next = Vector2.zero; 
+			///Set the next position as REPLICATED position if using connect mode
+			if(customize.connectMode) {next = rooms[r].replicated[d].pos;} 
+			///Set the next position as NEIGHBOURS position if not using connect mode
+			else {next = rooms[r].neighbours[d].pos;}
 			//Stop if the next positon are zero
 			if(next == Vector2.zero) {continue;}
-			//Set position of the bridge in direction
-			rooms[r].build.bridgePosition[d] = new Vector2
-			(
-				//Get the middle X axis point of the current and next position
-				rooms[r].position.x + (next.x - rooms[r].position.x) / 2,
-				//Get the middle Y axis point of the current and next position
-				rooms[r].position.y + (next.y - rooms[r].position.y) / 2
-			);
 			//Decide the rotation of this bridge
 			float rot = 0; switch(d)
 			{
@@ -386,8 +375,14 @@ public class RoomGenerator : MonoBehaviour
 				case 2: rot = 90 ; break;
 				case 3: rot = 270; break;
 			}
-			//Build the bridge of this room at room position with given rotation
-			BuildBridge(rooms[r], rooms[r].build.bridgePosition[d], rot);
+			//Set position for the bridge at middle point between current and next room
+			Vector2 pos = new Vector2(room.x + (next.x - room.x)/2, room.y + (next.y - room.y)/2);
+			//Stopped bridge from building at the same position when not using connect mode
+			if(!customize.connectMode) {if(buildedPos.Contains(pos)) {continue;} buildedPos.Add(pos);}
+			//Save the bridge position in current room
+			rooms[r].build.bridgePos[d] = pos;
+			//Build the bridge of this room at position and rotation has get
+			BuildBridge(rooms[r], pos, rot);
 		}
 	}
 
