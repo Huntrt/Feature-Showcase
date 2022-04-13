@@ -237,23 +237,25 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   roomAmount: 100
   customize:
+    debug:
+      leaderColor: {r: 0.39999998, g: 1, b: 0.39999998, a: 1}
+      stuckColor: {r: 1, g: 0.39999998, b: 0.39999998, a: 1}
+      endColor: {r: 1, g: 0.65, b: 0.39999998, a: 1}
+    floorColor: {r: 1, g: 1, b: 1, a: 1}
     floorPrefab: {fileID: 4558046587480059573, guid: 8b54a26b9a8e8eb47bcbb1f5112ba983,
       type: 3}
     floorScale: {x: 0.2, y: 0.2}
     floorSpacing: {x: 0.06, y: 0.06}
-    floorColor: {r: 1, g: 1, b: 1, a: 1}
-    leaderColor: {r: 0.4150327, g: 1, b: 0.2980392, a: 1}
-    stuckColor: {r: 1, g: 0.39999998, b: 0.39999998, a: 1}
+    bridgeColor: {r: 0.39999998, g: 0.44999993, b: 1, a: 1}
     bridgePrefab: {fileID: 369311246715796509, guid: a8cbcfcfe80c63c41a47c25cb98db4f9,
       type: 3}
     bridgeScale: {x: 0.07, y: 0.33}
-    bridgeColor: {r: 0.39999998, g: 0.44999993, b: 1, a: 1}
     connectMode: 1
   replicateReq:
-    min: 1
-    max: 1
+    min: 0
+    max: 4
   replicateRate:
-    general: 50
+    general: 10
     useDirectional: 0
     up: 0
     down: 0

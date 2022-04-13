@@ -21,7 +21,8 @@ public class RoomGenerator : MonoBehaviour
 	GameObject floorGroup, bridgeGroup, wallGroup;
 
 #region Classes
-	[Serializable] public class ReplicateRequirement {[Range(1,4)] public int min, max;}
+	[Serializable] public class ReplicateRequirement 
+	{[Range(0,4)] public int min; [Range(1,4)] public int max;}
 	[Serializable] public class RateSetting 
 	{
 		public float general;
@@ -179,11 +180,23 @@ public class RoomGenerator : MonoBehaviour
 		}
 	#endregion
 	#region This leader cycle complete
-		/// If haven't got enough room and this leader don't meet the minimum amount of replicate need
-		if(rooms.Count < roomAmount && leader.replicateCount < replicateReq.min)
+		/// If haven't got enough room 
+		if(rooms.Count < roomAmount)
 		{
-			//Replicate again at this leader 
-			StartCoroutine(Replicate(leader, leader));
+			bool retry = false;
+			//If there is only 1 leader left or this leader haven't replicate the minimum amount needed
+			if(currentLeaders.Count < 1 || leader.replicateCount < replicateReq.min)
+			{
+				//Replicate again at this leader
+				StartCoroutine(Replicate(leader, leader));
+				retry = true;
+			}
+			//If there more leader left while this leader haven't replicate anything
+			if(!retry && leader.replicateCount == 0)
+			{
+				//Change leader floor color to end color
+				leader.structure.floorRender.color = customize.debug.endColor;
+			}
 		}
 		/// If there are no more leader then generating are finish
 		if(currentLeaders.Count == 0) {GeneratingFinish();}
@@ -261,6 +274,8 @@ public class RoomGenerator : MonoBehaviour
 		areGenerating = false; completeGenerate = true;
 		//Setting up bridge
 		SetupBridge();
+		//Reset all the floor color to default
+		for (int r = 0; r < rooms.Count; r++) {rooms[r].structure.floorRender.color = customize.floorColor;}
 		//Auto generate if wanted when complete the current generate
 		if(autoGenerate) {Invoke("Generate", autoDelay);}
 	}
@@ -335,24 +350,6 @@ public class RoomGenerator : MonoBehaviour
 		bridgeGroup = new GameObject(); bridgeGroup.name = "Bridge Group";
 	}
 
-	void BuildFloor(RoomData room, RoomData prev)
-	{
-		//Don't build floor if it has already been build
-		if(room.structure.floor != null) {return;}
-		//Build the floor at the room given position
-		GameObject floor = Instantiate(customize.floorPrefab, room.position, Quaternion.identity);
-		//@ Setup the newly floor bridge
-		floor.transform.SetParent(floorGroup.transform);
-		floor.transform.localScale = customize.floorScale;
-		floor.name = (rooms.Count-1) + " - Floor";
-		room.structure.floor = floor;
-		room.structure.floorRender = floor.GetComponent<SpriteRenderer>();
-		//Set this room current color to leader color
-		room.structure.floorRender.color = customize.leaderColor;
-		//Set the previous room color to default color
-		prev.structure.floorRender.color = customize.floorColor;
-	}
-
 	void SetupBridge()
 	{
 		//List of position bridge as builded
@@ -416,7 +413,7 @@ public class RoomGenerator : MonoBehaviour
 		bridge.name = (room.index + 1) + "'s Bridge";
 		room.structure.bridge = bridge;
 		room.structure.bridgeRender = bridge.GetComponent<SpriteRenderer>();
-		//Set the bridge color to default
+		//Set the bridge color to default color
 		room.structure.bridgeRender.color = customize.bridgeColor;
 	}
 #endregion
