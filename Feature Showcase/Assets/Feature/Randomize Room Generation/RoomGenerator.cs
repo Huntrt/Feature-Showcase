@@ -31,14 +31,16 @@ public class RoomGenerator : MonoBehaviour
 	}
 	[Serializable] class Customize
 	{
+		public DebugInfo debug;
+		[Serializable] public class DebugInfo {public Color leaderColor, stuckColor, endColor;}
 		[Header("Floor")]
+		public Color floorColor;
 		public GameObject floorPrefab;
 		public Vector2 floorScale, floorSpacing;
-		public Color floorColor, leaderColor, stuckColor;
 		[Header("Bridge")]
+		public Color bridgeColor;
 		public GameObject bridgePrefab;
 		public Vector2 bridgeScale;
-		public Color bridgeColor;
 		public bool connectMode = true;
 	}
 	[Serializable] public class RoomData
@@ -197,7 +199,7 @@ public class RoomGenerator : MonoBehaviour
 		//! If the leader are stuck
 		if(leader.stuck)
 		{
-			leader.structure.floorRender.color = customize.stuckColor;
+			leader.structure.floorRender.color = customize.debug.stuckColor;
 			//If there already an room ar the next room
 			if(nextRoom != null)
 			{
@@ -384,6 +386,24 @@ public class RoomGenerator : MonoBehaviour
 			//Build the bridge of this room at position and rotation has get
 			BuildBridge(rooms[r], pos, rot);
 		}
+	}
+
+	void BuildFloor(RoomData room, RoomData prev)
+	{
+		//Don't build floor if it has already been build
+		if(room.structure.floor != null) {return;}
+		//Build the floor at the room given position
+		GameObject floor = Instantiate(customize.floorPrefab, room.position, Quaternion.identity);
+		//@ Setup the newly floor bridge
+		floor.transform.SetParent(floorGroup.transform);
+		floor.transform.localScale = customize.floorScale;
+		floor.name = (rooms.Count-1) + " - Floor";
+		room.structure.floor = floor;
+		room.structure.floorRender = floor.GetComponent<SpriteRenderer>();
+		//Set this room current color to leader color
+		room.structure.floorRender.color = customize.debug.leaderColor;
+		//Set the previous room color to default color
+		prev.structure.floorRender.color = customize.floorColor;
 	}
 
 	void BuildBridge(RoomData room , Vector2 pos, float rot)
