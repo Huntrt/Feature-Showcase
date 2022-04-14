@@ -428,8 +428,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u200B"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 0b5ef6e918992a84e897f7a3314a8027, type: 2}
-  m_sharedMaterial: {fileID: 2338621180763744032, guid: 0b5ef6e918992a84e897f7a3314a8027,
+  m_fontAsset: {fileID: 11400000, guid: dcc5148cdcfd3c04496a440404da7551, type: 2}
+  m_sharedMaterial: {fileID: -6383492204534913383, guid: dcc5148cdcfd3c04496a440404da7551,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -563,8 +563,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: Clear
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 0b5ef6e918992a84e897f7a3314a8027, type: 2}
-  m_sharedMaterial: {fileID: 2338621180763744032, guid: 0b5ef6e918992a84e897f7a3314a8027,
+  m_fontAsset: {fileID: 11400000, guid: dcc5148cdcfd3c04496a440404da7551, type: 2}
+  m_sharedMaterial: {fileID: -6383492204534913383, guid: dcc5148cdcfd3c04496a440404da7551,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -982,8 +982,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: Enter message...
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 0b5ef6e918992a84e897f7a3314a8027, type: 2}
-  m_sharedMaterial: {fileID: 2338621180763744032, guid: 0b5ef6e918992a84e897f7a3314a8027,
+  m_fontAsset: {fileID: 11400000, guid: dcc5148cdcfd3c04496a440404da7551, type: 2}
+  m_sharedMaterial: {fileID: -6383492204534913383, guid: dcc5148cdcfd3c04496a440404da7551,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
