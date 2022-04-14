@@ -17,6 +17,7 @@ public class RoomGenerator : MonoBehaviour
 	public event Action onGenerated;
 	public List<RoomData> currentLeaders = new List<RoomData>();
 	public List<RoomData> rooms = new List<RoomData>();
+	public List<BridgeData> bridges = new List<BridgeData>();
 	public bool autoGenerate; public float autoDelay;
 	GameObject floorGroup, bridgeGroup, wallGroup;
 
@@ -42,7 +43,7 @@ public class RoomGenerator : MonoBehaviour
 		public Color bridgeColor;
 		public GameObject bridgePrefab;
 		public Vector2 bridgeScale;
-		public bool connectMode = true;
+		public bool neighbourMode;
 	}
 	[Serializable] public class RoomData
 	{
@@ -60,8 +61,13 @@ public class RoomGenerator : MonoBehaviour
 		{
 			public GameObject floor, bridge, wall;
 			public SpriteRenderer floorRender, bridgeRender;
-			public Vector2[] bridgePos = new Vector2[4];
 		} 
+	}
+	[Serializable] public class BridgeData
+	{
+		public int index;
+		public Vector2[] connectPosition = new Vector2[2]; 
+		public Vector2 position;
 	}
 #endregion
 
@@ -83,6 +89,8 @@ public class RoomGenerator : MonoBehaviour
 		completeGenerate = false;
 		//Renew the room list
 		rooms.Clear(); rooms = new List<RoomData>();
+		//Renew the bridges list
+		bridges.Clear(); bridges = new List<BridgeData>();
 		//Add the first empty room than replicate at it
 		rooms.Add(new RoomData()); StartCoroutine(Replicate(rooms[0], rooms[0]));
 	}
@@ -352,17 +360,16 @@ public class RoomGenerator : MonoBehaviour
 
 	void SetupBridge()
 	{
-		//List of position bridge as builded
-		List<Vector2> buildedPos = new List<Vector2>();
+		int indexCounter = 0;
 		//Go through all the room to go through 4 direction of each room
 		for (int r = 0; r < rooms.Count; r++) for (int d = 0; d < 4; d++)
 		{
 			//Get room position and empty next position in this direction
 			Vector2 room = rooms[r].position; Vector2 next = Vector2.zero; 
-			///Set the next position as REPLICATED position if using connect mode
-			if(customize.connectMode) {next = rooms[r].replicated[d].pos;} 
 			///Set the next position as NEIGHBOURS position if not using connect mode
-			else {next = rooms[r].neighbours[d].pos;}
+			if(customize.neighbourMode) {next = rooms[r].neighbours[d].pos;} 
+			///Set the next position as REPLICATED position if using connect mode
+			else {next = rooms[r].replicated[d].pos;}
 			//Stop if the next positon are zero
 			if(next == Vector2.zero) {continue;}
 			//Decide the rotation of this bridge
@@ -376,12 +383,24 @@ public class RoomGenerator : MonoBehaviour
 			}
 			//Set position for the bridge at middle point between current and next room
 			Vector2 pos = new Vector2(room.x + (next.x - room.x)/2, room.y + (next.y - room.y)/2);
-			//Stopped bridge from building at the same position when not using connect mode
-			if(!customize.connectMode) {if(buildedPos.Contains(pos)) {continue;} buildedPos.Add(pos);}
-			//Save the bridge position in current room
-			rooms[r].structure.bridgePos[d] = pos;
-			//Build the bridge of this room at position and rotation has get
-			BuildBridge(rooms[r], pos, rot);
+			//Create an new bridge data
+			BridgeData newBridge = new BridgeData();
+			//Set the new bridge's index
+			newBridge.index = indexCounter;
+			//Set the new bridge's position
+			newBridge.position = pos;
+			//Set the bridge 1st connection as current room position and 2nd as room at next position
+			newBridge.connectPosition[0] = room; newBridge.connectPosition[1] = next;
+			//If the new bridge is not an duplicate
+			if(!bridges.Contains(newBridge))
+			{
+				//Increase the bridge index counter
+				indexCounter++;
+				//Add the newly bridge into list
+				bridges.Add(newBridge);
+				//Build the bridge of this room at position and rotation has get with it index
+				BuildBridge(rooms[r], pos, rot, newBridge.index);
+			}
 		}
 	}
 
@@ -403,14 +422,14 @@ public class RoomGenerator : MonoBehaviour
 		prev.structure.floorRender.color = customize.floorColor;
 	}
 
-	void BuildBridge(RoomData room , Vector2 pos, float rot)
+	void BuildBridge(RoomData room , Vector2 pos, float rot, int index)
 	{
 		//Create the bridge object at position with the current index direction as rotation
 		GameObject bridge = Instantiate(customize.bridgePrefab, pos, Quaternion.Euler(0,0,rot));
 		//@ Setup the newly created bridge
 		bridge.transform.SetParent(bridgeGroup.transform);
 		bridge.transform.localScale = customize.bridgeScale;
-		bridge.name = (room.index + 1) + "'s Bridge";
+		bridge.name = index + " Bridge";
 		room.structure.bridge = bridge;
 		room.structure.bridgeRender = bridge.GetComponent<SpriteRenderer>();
 		//Set the bridge color to default color
