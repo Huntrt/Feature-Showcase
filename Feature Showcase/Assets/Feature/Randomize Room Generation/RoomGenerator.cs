@@ -42,8 +42,12 @@ public class RoomGenerator : MonoBehaviour
 		[Header("Bridge")]
 		public Color bridgeColor;
 		public GameObject bridgePrefab;
-		public Vector2 bridgeScale;
+		public float bridgeWidth, bridgeLength;
 		public bool neighbourMode;
+		[Header("Wall")]
+		public Color wallColor;
+		public GameObject wallPrefab;
+		public float wallWidth, wallLength;
 	}
 	[Serializable] public class RoomData
 	{
@@ -428,7 +432,7 @@ public class RoomGenerator : MonoBehaviour
 		GameObject bridge = Instantiate(customize.bridgePrefab, pos, Quaternion.Euler(0,0,rot));
 		//@ Setup the newly created bridge
 		bridge.transform.SetParent(bridgeGroup.transform);
-		bridge.transform.localScale = customize.bridgeScale;
+		bridge.transform.localScale = new Vector2(customize.bridgeWidth, customize.bridgeLength);
 		bridge.name = index + " Bridge";
 		room.structure.bridge = bridge;
 		room.structure.bridgeRender = bridge.GetComponent<SpriteRenderer>();
