@@ -85,8 +85,8 @@ public class RoomGenerator : MonoBehaviour
 	{
 		//Only generating when not generate
 		if(areGenerating == true) {return;}
-		//Setting build
-		SetupBuild();
+		//Preparering to for structure build
+		PrepareStructure();
 		//Are now generating
 		areGenerating = true;
 		//Generate are no longer complete
@@ -284,8 +284,8 @@ public class RoomGenerator : MonoBehaviour
 		onGenerated?.Invoke();
 		//Has completed generation
 		areGenerating = false; completeGenerate = true;
-		//Setting up bridge
-		SetupBridge();
+		//Setting up bridge and wall
+		SetupBridge(); SetupWall();
 		//Reset all the floor color to default
 		for (int r = 0; r < rooms.Count; r++) {rooms[r].structure.floorRender.color = customize.floorColor;}
 		//Auto generate if wanted when complete the current generate
@@ -350,7 +350,7 @@ public class RoomGenerator : MonoBehaviour
 #endregion
 
 #region Build
-	void SetupBuild()
+	void PrepareStructure()
 	{
 		//Destroy the old floor group if it exist
 		if(floorGroup != null) {Destroy(floorGroup);}
@@ -360,6 +360,10 @@ public class RoomGenerator : MonoBehaviour
 		if(bridgeGroup != null) {Destroy(bridgeGroup);}
 		//Create an new group object for bridge then edit it name
 		bridgeGroup = new GameObject(); bridgeGroup.name = "Bridge Group";
+		//Destroy the old wall group if it exist
+		if(wallGroup != null) {Destroy(wallGroup);}
+		//Create an new group object for wall then edit it name
+		wallGroup = new GameObject(); wallGroup.name = "Wall Group";
 	}
 
 	void SetupBridge()
@@ -406,6 +410,11 @@ public class RoomGenerator : MonoBehaviour
 				BuildBridge(rooms[r], pos, rot, newBridge.index);
 			}
 		}
+	}
+
+	void SetupWall()
+	{
+		
 	}
 
 	void BuildFloor(RoomData room, RoomData prev)
