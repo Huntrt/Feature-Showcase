@@ -47,7 +47,8 @@ public class RoomGenerator : MonoBehaviour
 		[Header("Wall")]
 		public Color wallColor;
 		public GameObject wallPrefab;
-		public float wallWidth, wallLength;
+		public float wallThick, wallLength;
+		public bool enclosedMode;
 	}
 	[Serializable] public class RoomData
 	{
@@ -64,7 +65,7 @@ public class RoomGenerator : MonoBehaviour
 		[Serializable] public class Structure 
 		{
 			public GameObject floor, bridge, wall;
-			public SpriteRenderer floorRender, bridgeRender;
+			public SpriteRenderer floorRender, bridgeRender, wallRender;
 			public bool[] hasBridge = new bool[4];
 		} 
 	}
@@ -147,7 +148,7 @@ public class RoomGenerator : MonoBehaviour
 			}
 		}
 		//Go through all 4 direction to check all of them for potential replicate
-		for (int d = 0; d < 4; d++) {CheckDirection(leader, DirectionVector(d), d, result[d]);}
+		for (int d = 0; d < 4; d++) {CheckDirection(leader, IndexToDirection(d), d, result[d]);}
 		//This room are no longer the current leader
 		currentLeaders.Remove(leader);
 	#endregion
@@ -161,8 +162,8 @@ public class RoomGenerator : MonoBehaviour
 		//Go through all 4 direction to check neighbours 
 		for (int d = 0; d < 4; d++)
 		{
-			//Finding room in this direction of leader
-			RoomData finded = FindRoomAtCoordinates(leader.coordinates + DirectionVector(d));
+			//Finding room in this index direction of leader
+			RoomData finded = FindRoomAtCoordinates(leader.coordinates + IndexToDirection(d));
 			//If has find an room that haven't has neighbours in this direction
 			if(finded != null) if(!leader.neighbours[d].filled)
 			{
@@ -296,7 +297,7 @@ public class RoomGenerator : MonoBehaviour
 #endregion
 
 #region Converter
-	Vector2 DirectionVector(int index)
+	Vector2 IndexToDirection(int index)
 	{
 		//@ Return vector depend on index given from 0-3
 		if(index == 0) {return Vector2.up;}
@@ -305,6 +306,17 @@ public class RoomGenerator : MonoBehaviour
 		if(index == 3) {return Vector2.right;}
 		//Return zero vector if index given are not 0-3
 		return Vector2.zero;
+	}
+
+	float IndexToRotation(int index)
+	{
+		//@ Return rotation (360 degree) depend on index given from 0-3
+		if(index == 0) {return 0;}
+		if(index == 1) {return 180;}
+		if(index == 2) {return 90;}
+		if(index == 3) {return 270;}
+		//Return -1 if index given are not 0-3 and print warning
+		Debug.LogWarning("There no rotation for "+index+" index"); return -1;
 	}
 
 	int OppositeIndexDirection(int i) 
@@ -369,62 +381,102 @@ public class RoomGenerator : MonoBehaviour
 
 	void SetupBridge()
 	{
+		//Count to assign index for bridge
 		int indexCounter = 0;
 		//Go through all the room to go through 4 direction of each room
 		for (int r = 0; r < rooms.Count; r++) for (int d = 0; d < 4; d++)
 		{
 			//Get room position and empty next position in this direction
-			Vector2 room = rooms[r].position; Vector2 next = Vector2.zero; 
+			Vector2 roomP = rooms[r].position; Vector2 nextP = Vector2.zero; 
 			///Set the next position as NEIGHBOURS position if not using connect mode
-			if(customize.neighbourMode) {next = rooms[r].neighbours[d].pos;} 
+			if(customize.neighbourMode) {nextP = rooms[r].neighbours[d].pos;} 
 			///Set the next position as REPLICATED position if using connect mode
-			else {next = rooms[r].replicated[d].pos;}
+			else {nextP = rooms[r].replicated[d].pos;}
 			//Stop if the next positon are zero
-			if(next == Vector2.zero) {continue;}
-			//Decide the rotation of this bridge
-			float rot = 0; switch(d)
-			{
-				//@ Set rotation base on direction index given
-				case 0: rot = 0  ; break; 
-				case 1: rot = 180; break; 
-				case 2: rot = 90 ; break;
-				case 3: rot = 270; break;
-			}
+			if(nextP == Vector2.zero) {continue;}
 			//Set position for the bridge at middle point between current and next room
-			Vector2 pos = new Vector2(room.x + (next.x - room.x)/2, room.y + (next.y - room.y)/2);
+			Vector2 pos = new Vector2(roomP.x + (nextP.x - roomP.x)/2, roomP.y + (nextP.y - roomP.y)/2);
 			//Create an new bridge data
 			BridgeData newBridge = new BridgeData();
 			//Set the new bridge's index and position
 			newBridge.index = indexCounter; newBridge.position = pos;
 			//Set the bridge 1st connection as current room position and 2nd as room at next position
-			newBridge.connectPosition[0] = room; newBridge.connectPosition[1] = next;
+			newBridge.connectPosition[0] = roomP; newBridge.connectPosition[1] = nextP;
 			//If the new bridge is not an duplicate
 			if(!bridges.Contains(newBridge))
 			{
 				//The current room now has bridge at current direction
 				rooms[r].structure.hasBridge[d] = true;
 				//The next room new has bridge at opposite direction
-				FindRoomAtPosition(next).structure.hasBridge[OppositeIndexDirection(d)] = true;
+				FindRoomAtPosition(nextP).structure.hasBridge[OppositeIndexDirection(d)] = true;
 				//Increase the bridge index counter
 				indexCounter++;
 				//Add the newly bridge into list
 				bridges.Add(newBridge);
-				//Build the bridge of this room at position and rotation has get with it index
-				BuildBridge(rooms[r], pos, rot, newBridge.index);
+				//Build the bridge of this room at position and rotation of index direction
+				BuildBridge(rooms[r], pos, IndexToRotation(d), newBridge.index);
 			}
 		}
 	}
 
 	void SetupWall()
 	{
-		
+		//Go through all the room to go through 4 direction of each room
+		for (int r = 0; r < rooms.Count; r++) for (int d = 0; d < 4; d++)
+		{
+			//Save the current room position
+			Vector2 roomP = rooms[r].position;
+			//Get the position that has pushed outward in this direction from room
+			Vector2 outPos = WallOutwardPosition(roomP, d);
+			/// Enclosed wall if using that mode
+			if(customize.enclosedMode) {EnclosedWall(r, d, outPos, roomP);}
+			/// If not using enclosed mode (then connect mode) and this direction has NO neighbours
+			else if(!rooms[r].neighbours[d].filled)
+			{
+				//Get the position that has pushed outward in this direction from room
+				Vector2 pos = WallOutwardPosition(rooms[r].position, d);
+				//Build an wall for current room at set position with index rotation - 90
+				BuildWall(rooms[r], pos, IndexToRotation(d)-90, r, d);
+			}
+		}
+	}
+
+	//% Might move this code back to enclosed check if it small enough
+	void EnclosedWall(int r, int d, Vector2 outPos, Vector2 roomP)
+	{
+		//Does this direction has bridge?
+		bool bridged = rooms[r].structure.hasBridge[d];
+		//If this direction don't has bridge
+		if(!bridged)
+		{
+			//Build an wall for current room at out position with index rotation - 90
+			BuildWall(rooms[r], outPos, IndexToRotation(d)-90, r, d);
+		}
+	}
+
+	Vector2 WallOutwardPosition(Vector2 pos, int direction)
+	{
+		//Try the direction given
+		switch(direction)
+		{
+			//For UP - only Y will INCREASE with half of floor size
+			case 0: return new Vector2(pos.x, pos.y + (customize.floorScale.y/2));
+			//For DOWN - only Y will DECREASE with half of floor size
+			case 1: return new Vector2(pos.x, pos.y - (customize.floorScale.y/2)); 
+			//For LEFT - only X will DECREASE with half of floor size
+			case 2: return new Vector2(pos.x - (customize.floorScale.x/2), pos.y); 
+			//For RIGHT - only X will INCREASE with half of floor size
+			case 3: return new Vector2(pos.x + (customize.floorScale.x/2), pos.y);
+		}
+		//Return zero if the direction are not 0-3
+		return Vector2.zero;
 	}
 
 	void BuildFloor(RoomData room, RoomData prev)
 	{
 		//Don't build floor if it has already been build
 		if(room.structure.floor != null) {return;}
-		//Build the floor at the room given position
+		//Build the floor at the room given position with no rotation
 		GameObject floor = Instantiate(customize.floorPrefab, room.position, Quaternion.identity);
 		//@ Setup the newly floor bridge
 		floor.transform.SetParent(floorGroup.transform);
@@ -440,7 +492,7 @@ public class RoomGenerator : MonoBehaviour
 
 	void BuildBridge(RoomData room , Vector2 pos, float rot, int index)
 	{
-		//Create the bridge object at position with the current index direction as rotation
+		//Create the bridge object at given position and rotation
 		GameObject bridge = Instantiate(customize.bridgePrefab, pos, Quaternion.Euler(0,0,rot));
 		//@ Setup the newly created bridge
 		bridge.transform.SetParent(bridgeGroup.transform);
@@ -450,6 +502,20 @@ public class RoomGenerator : MonoBehaviour
 		room.structure.bridgeRender = bridge.GetComponent<SpriteRenderer>();
 		//Set the bridge color to default color
 		room.structure.bridgeRender.color = customize.bridgeColor;
+	}
+
+	void BuildWall(RoomData room , Vector2 pos, float rot, int belong, int direction)
+	{
+		//Create the wall object at given position and rotation
+		GameObject wall = Instantiate(customize.wallPrefab, pos, Quaternion.Euler(0,0,rot));
+		//@ Setup the newly created wall
+		wall.transform.SetParent(wallGroup.transform);
+		wall.transform.localScale = new Vector2(customize.wallThick, customize.wallLength);
+		wall.name = "Wall of Room " + belong + " as index " + direction;
+		room.structure.wall = wall;
+		room.structure.wallRender = wall.GetComponent<SpriteRenderer>();
+		//Set the wall color to default color
+		room.structure.wallRender.color = customize.wallColor;
 	}
 #endregion
 }

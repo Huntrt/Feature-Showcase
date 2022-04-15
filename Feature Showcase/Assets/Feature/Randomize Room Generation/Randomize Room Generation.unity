@@ -235,7 +235,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3321522df63a8ba4dbbc31028bc13e84, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  roomAmount: 5
+  roomAmount: 10
   customize:
     debug:
       leaderColor: {r: 0.39999998, g: 1, b: 0.39999998, a: 1}
@@ -255,8 +255,9 @@ MonoBehaviour:
     wallColor: {r: 1, g: 0.39999998, b: 0.5800001, a: 1}
     wallPrefab: {fileID: 1901219987388566909, guid: 4ae109bd84781594080b6041ba7dd62e,
       type: 3}
-    wallWidth: 0
-    wallLength: 0
+    wallThick: 0.2
+    wallLength: 1.2
+    enclosedMode: 1
   replicateReq:
     min: 0
     max: 4
