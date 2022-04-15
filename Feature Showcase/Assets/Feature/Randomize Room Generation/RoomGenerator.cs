@@ -65,6 +65,7 @@ public class RoomGenerator : MonoBehaviour
 		{
 			public GameObject floor, bridge, wall;
 			public SpriteRenderer floorRender, bridgeRender;
+			public bool[] hasBridge = new bool[4];
 		} 
 	}
 	[Serializable] public class BridgeData
@@ -393,15 +394,17 @@ public class RoomGenerator : MonoBehaviour
 			Vector2 pos = new Vector2(room.x + (next.x - room.x)/2, room.y + (next.y - room.y)/2);
 			//Create an new bridge data
 			BridgeData newBridge = new BridgeData();
-			//Set the new bridge's index
-			newBridge.index = indexCounter;
-			//Set the new bridge's position
-			newBridge.position = pos;
+			//Set the new bridge's index and position
+			newBridge.index = indexCounter; newBridge.position = pos;
 			//Set the bridge 1st connection as current room position and 2nd as room at next position
 			newBridge.connectPosition[0] = room; newBridge.connectPosition[1] = next;
 			//If the new bridge is not an duplicate
 			if(!bridges.Contains(newBridge))
 			{
+				//The current room now has bridge at current direction
+				rooms[r].structure.hasBridge[d] = true;
+				//The next room new has bridge at opposite direction
+				FindRoomAtPosition(next).structure.hasBridge[OppositeIndexDirection(d)] = true;
 				//Increase the bridge index counter
 				indexCounter++;
 				//Add the newly bridge into list
