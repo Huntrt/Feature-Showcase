@@ -43,11 +43,14 @@ public class RoomGenerator : MonoBehaviour
 		public Color bridgeColor;
 		public GameObject bridgePrefab;
 		public float bridgeWidth, bridgeLength;
+		[Tooltip("Will the bridge connect to every room or connect by how room was replicate")]
 		public bool neighbourMode;
 		[Header("Wall")]
 		public Color wallColor;
 		public GameObject wallPrefab;
-		public float wallThick, wallLength;
+		public float wallThick, wallLengthModify;
+		public enum WallAlign {center, outside, inside} public WallAlign wallAlign;
+		[Tooltip("Will the wall block all side of room or only block the side has nothing")]
 		public bool enclosedMode;
 	}
 	[Serializable] public class RoomData
@@ -428,29 +431,99 @@ public class RoomGenerator : MonoBehaviour
 			Vector2 roomP = rooms[r].position;
 			//Get the position that has pushed outward in this direction from room
 			Vector2 outPos = WallOutwardPosition(roomP, d);
-			/// Enclosed wall if using that mode
-			if(customize.enclosedMode) {EnclosedWall(r, d, outPos, roomP);}
-			/// If not using enclosed mode (then connect mode) and this direction has NO neighbours
-			else if(!rooms[r].neighbours[d].filled)
+			//Get the facing value by checking direction Up/Down = 0 and Left/Right = 1
+			int facing = 0; if(d==2 || d==3) {facing = 1;}
+			//Get the rotation of current index then decrease it by -90
+			float rot = IndexToRotation(d) - 90;
+			//Get the half of the wall thick value as positive if up/right and negative if left/down
+			float thick = -customize.wallThick/2; if(d == 0 || d == 3) {thick = customize.wallThick/2;}
+			//Value for length to fit
+			float lengthFit = 2;
+			//Get the wall alignment enum
+			switch(customize.wallAlign.ToString())
+			{
+				//Fit to 0.5 and Thick to 0 if using center mode
+				case "center": lengthFit = 1; thick = 0; break;
+				//Fit to 0 andThick to negative if using inside mode 
+				case "inside": lengthFit = 0; thick = -thick; break;
+			}
+			//Multiply wall thick to get fit amount for length
+			lengthFit = customize.wallThick * lengthFit;
+			//The length to use
+			float length = 0;
+			//If facing UP/DOWN
+			if(facing == 0)
+			{
+				//Increase Y axis of out position with thick
+				outPos.y += thick;
+				//Get the floor scale X axis as current length then make it fit
+				length = customize.floorScale.x + lengthFit;
+			}
+			//If facing LEFT/RIGHT
+			else
+			{
+				//Increase X axis of out position with thick
+				outPos.x += thick;
+				//Get the floor scale Y axis as current length then make it fit
+				length = customize.floorScale.y + lengthFit;
+			}
+			/// If using Enclosed mode
+			if(customize.enclosedMode)
+			{
+				//If this direction don't has bridge
+				if(!rooms[r].structure.hasBridge[d])
+				{
+					//Build an wall for current room at out position and rotation
+					BuildWall(rooms[r], outPos, rot, r, d, length);
+				}
+				//If this direction has bridge
+				else
+				{
+					//Create an gate for direction has bridge
+					GateWall(r, d, outPos, roomP, rot, facing, length);
+				}
+				
+			}
+			/// Else use connect mode instead and this direction has NO neighbours
+			if(!customize.enclosedMode && !rooms[r].neighbours[d].filled)
 			{
 				//Get the position that has pushed outward in this direction from room
 				Vector2 pos = WallOutwardPosition(rooms[r].position, d);
-				//Build an wall for current room at set position with index rotation - 90
-				BuildWall(rooms[r], pos, IndexToRotation(d)-90, r, d);
+				//Build an wall for current room at set position and rotation
+				BuildWall(rooms[r], pos, rot, r, d, length);
 			}
 		}
 	}
 
-	//% Might move this code back to enclosed check if it small enough
-	void EnclosedWall(int r, int d, Vector2 outPos, Vector2 roomP)
+	void GateWall(int r, int d, Vector2 outPos, Vector2 roomP, float rot, int facing, float length)
 	{
-		//Does this direction has bridge?
-		bool bridged = rooms[r].structure.hasBridge[d];
-		//If this direction don't has bridge
-		if(!bridged)
+		//Center are room position X axis if facing up/down or Y if facing left/right
+		float center = 0; if(facing == 0) {center = roomP.x;} else {center = roomP.y;}
+		//Get the bridge value by increase half of bridge width from center
+		float bridge = center + (customize.bridgeWidth/2);
+		//Get the edge valur by increase half of length from center
+		float edge = center + length/2;
+		//The positive side are the middle point between edge and bridge
+		float sidePOS = (bridge + (edge - bridge)/2);
+		//The negative side get by decrease muitple value from the positive side
+		float sideNEG = sidePOS - ((sidePOS - bridge)*2) - customize.bridgeWidth;
+		//The current are now the value between edge and bridge
+		length = edge - bridge;
+		//If facing UP/DOWN
+		if(facing == 0)
 		{
-			//Build an wall for current room at out position with index rotation - 90
-			BuildWall(rooms[r], outPos, IndexToRotation(d)-90, r, d);
+			//Build wall of room at side positive as X and outward as Y with custom length
+			BuildWall(rooms[r], new Vector2(sidePOS, outPos.y), rot, r,d, length);
+			//Build wall of room at side negative as X and outward as Y with custom length
+			BuildWall(rooms[r], new Vector2(sideNEG, outPos.y), rot, r,d, length);
+		}
+		//If facing LEFT/RIGHT
+		else 
+		{
+			//Build wall of room at outward as X and side positive as Y with custom length
+			BuildWall(rooms[r], new Vector2(outPos.x, sidePOS), rot, r,d, length);
+			//Build wall of room at outward as X and side negative as Y with custom length
+			BuildWall(rooms[r], new Vector2(outPos.x, sideNEG), rot, r,d, length);
 		}
 	}
 
@@ -504,13 +577,13 @@ public class RoomGenerator : MonoBehaviour
 		room.structure.bridgeRender.color = customize.bridgeColor;
 	}
 
-	void BuildWall(RoomData room , Vector2 pos, float rot, int belong, int direction)
+	void BuildWall(RoomData room , Vector2 pos, float rot, int belong, int direction, float length)
 	{
 		//Create the wall object at given position and rotation
 		GameObject wall = Instantiate(customize.wallPrefab, pos, Quaternion.Euler(0,0,rot));
 		//@ Setup the newly created wall
 		wall.transform.SetParent(wallGroup.transform);
-		wall.transform.localScale = new Vector2(customize.wallThick, customize.wallLength);
+		wall.transform.localScale = new Vector2(customize.wallThick, length + customize.wallLengthModify);
 		wall.name = "Wall of Room " + belong + " as index " + direction;
 		room.structure.wall = wall;
 		room.structure.wallRender = wall.GetComponent<SpriteRenderer>();
