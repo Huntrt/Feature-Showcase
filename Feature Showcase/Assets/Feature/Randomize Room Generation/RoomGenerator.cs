@@ -428,80 +428,96 @@ public class RoomGenerator : MonoBehaviour
 		for (int r = 0; r < rooms.Count; r++) for (int d = 0; d < 4; d++)
 		{
 			//Save the current room position
-			Vector2 roomP = rooms[r].position;
+			Vector2 roomPos = rooms[r].position;
 			//Get the position that has pushed outward in this direction from room
-			Vector2 outPos = WallOutwardPosition(roomP, d);
-			//Get the facing value by checking direction Up/Down = 0 and Left/Right = 1
-			int facing = 0; if(d==2 || d==3) {facing = 1;}
+			Vector2 outPos = WallOutwardPosition(roomPos, d);
+			//Get the current adjacent by checking direction Up/Down = 0 and Left/Right = 1
+			int adjacent = 0; if(d==2 || d==3) {adjacent = 1;}
 			//Get the rotation of current index then decrease it by -90
 			float rot = IndexToRotation(d) - 90;
 			//Get the half of the wall thick value as positive if up/right and negative if left/down
-			float thick = -customize.wallThick/2; if(d == 0 || d == 3) {thick = customize.wallThick/2;}
-			//Value for length to fit
-			float lengthFit = 2;
-			//Get the wall alignment enum
+			float thick = customize.wallThick/2; if(d==1||d==2) {thick = -thick;}
+			//The length of wall
+			float length = 0;
+			//Get the wall alignment choosed
 			switch(customize.wallAlign.ToString())
 			{
-				//Fit to 0.5 and Thick to 0 if using center mode
-				case "center": lengthFit = 1; thick = 0; break;
-				//Fit to 0 andThick to negative if using inside mode 
-				case "inside": lengthFit = 0; thick = -thick; break;
+				//Length to 1 and thick to 0 if choose center mode
+				case "center": length = 1; thick = 0; break;
+				//Length to 2 and not chaging thick if choose outside mode 
+				case "outside": length = 2; break;
+				//Length to 0 and thick to negative if choose inside mode 
+				case "inside": length = 0; thick = -thick; break;
 			}
-			//Multiply wall thick to get fit amount for length
-			lengthFit = customize.wallThick * lengthFit;
-			//The length to use
-			float length = 0;
-			//If facing UP/DOWN
-			if(facing == 0)
+			//Multiply length with wall thick to know how many thick need to add onto length
+			length *= customize.wallThick;
+			//If adjacent are UP/DOWN
+			if(adjacent == 0)
 			{
 				//Increase Y axis of out position with thick
 				outPos.y += thick;
-				//Get the floor scale X axis as current length then make it fit
-				length = customize.floorScale.x + lengthFit;
+				//Increase floor scale X axis with length
+				length += customize.floorScale.x;
 			}
-			//If facing LEFT/RIGHT
+			//If adjacent are LEFT/RIGHT
 			else
 			{
 				//Increase X axis of out position with thick
 				outPos.x += thick;
-				//Get the floor scale Y axis as current length then make it fit
-				length = customize.floorScale.y + lengthFit;
+				//Increase floor scale Y axis with length
+				length += customize.floorScale.y;
 			}
 			/// If using Enclosed mode
 			if(customize.enclosedMode)
 			{
-				//If this direction don't has bridge
-				if(!rooms[r].structure.hasBridge[d])
-				{
-					//Build an wall for current room at out position and rotation
-					BuildWall(rooms[r], outPos, rot, r, d, length);
-				}
-				//If this direction has bridge
-				else
-				{
-					//Create an gate for direction has bridge
-					GateWall(r, d, outPos, roomP, rot, facing, length);
-				}
-				
+				//Build an wall normally for this room if this direction don't has bridge
+				if(!rooms[r].structure.hasBridge[d]) {BuildWall(rooms[r], outPos, rot, r, d, length);}
+				//Create an gate for this room if this direction if it has bridge
+				else {Wall_BuildGate(r, d, outPos, roomPos, rot, adjacent, length);}
 			}
-			/// Else use connect mode instead and this direction has NO neighbours
+			/// Else now in connect mode instead with direction has NO neighbours
 			if(!customize.enclosedMode && !rooms[r].neighbours[d].filled)
 			{
-				//Get the position that has pushed outward in this direction from room
-				Vector2 pos = WallOutwardPosition(rooms[r].position, d);
-				//Build an wall for current room at set position and rotation
-				BuildWall(rooms[r], pos, rot, r, d, length);
+				//? This are for cutting part of wall that poke into floor
+				//The value to cut off this wall's length are wall thick
+				float cutoff = customize.wallThick;
+				//Get the wall alignment choosed
+				switch(customize.wallAlign.ToString())
+				{
+					//Cutoff 0 if choose center
+					case "center": cutoff = 0; break;
+					//Cutof to negative if choose inside
+					case "inside": cutoff = -cutoff; break;
+				}
+				//If adjacent are UP/DOWN
+				if(adjacent == 0)
+				{
+					//Cut off length and move to RIGHT if room's LEFT neighbours filled
+					if(rooms[r].neighbours[2].filled) {length -= cutoff; outPos.x += cutoff/2;}
+					//Cut off length and move to LEFT if room's RIGHT neighbours filled
+					if(rooms[r].neighbours[3].filled) {length -= cutoff; outPos.x -= cutoff/2;}
+				}
+				//If adjacent are LEFT/RIGHT
+				else
+				{	
+					//Cut off length and move DOWN if room's UP neighbours filled
+					if(rooms[r].neighbours[0].filled) {length -= cutoff; outPos.y -= cutoff/2;}
+					//Cut off length and move UP if DOWN room's neighbours filled
+					if(rooms[r].neighbours[1].filled) {length -= cutoff; outPos.y += cutoff/2;}
+				}
+				//Build an wall for current room at out position and rotation
+				BuildWall(rooms[r], outPos, rot, r, d, length);
 			}
 		}
 	}
 
-	void GateWall(int r, int d, Vector2 outPos, Vector2 roomP, float rot, int facing, float length)
+	void Wall_BuildGate(int r, int d, Vector2 outPos, Vector2 roomPos, float rot, int adjacent, float length)
 	{
-		//Center are room position X axis if facing up/down or Y if facing left/right
-		float center = 0; if(facing == 0) {center = roomP.x;} else {center = roomP.y;}
+		//Center are room position X axis if adjacent up/down or Y if adjacent left/right
+		float center = 0; if(adjacent == 0) {center = roomPos.x;} else {center = roomPos.y;}
 		//Get the bridge value by increase half of bridge width from center
 		float bridge = center + (customize.bridgeWidth/2);
-		//Get the edge valur by increase half of length from center
+		//Get the edge value by increase half of length from center
 		float edge = center + length/2;
 		//The positive side are the middle point between edge and bridge
 		float sidePOS = (bridge + (edge - bridge)/2);
@@ -509,15 +525,15 @@ public class RoomGenerator : MonoBehaviour
 		float sideNEG = sidePOS - ((sidePOS - bridge)*2) - customize.bridgeWidth;
 		//The current are now the value between edge and bridge
 		length = edge - bridge;
-		//If facing UP/DOWN
-		if(facing == 0)
+		//If adjacent are UP/DOWN
+		if(adjacent == 0)
 		{
 			//Build wall of room at side positive as X and outward as Y with custom length
 			BuildWall(rooms[r], new Vector2(sidePOS, outPos.y), rot, r,d, length);
 			//Build wall of room at side negative as X and outward as Y with custom length
 			BuildWall(rooms[r], new Vector2(sideNEG, outPos.y), rot, r,d, length);
 		}
-		//If facing LEFT/RIGHT
+		//If adjacent are LEFT/RIGHT
 		else 
 		{
 			//Build wall of room at outward as X and side positive as Y with custom length
