@@ -245,20 +245,20 @@ MonoBehaviour:
     floorPrefab: {fileID: 4558046587480059573, guid: 8b54a26b9a8e8eb47bcbb1f5112ba983,
       type: 3}
     floorScale: {x: 1, y: 1}
-    floorSpacing: {x: 0, y: 0}
+    floorSpacing: 0.3
     bridgeColor: {r: 0.5, g: 0.66666675, b: 1, a: 1}
     bridgePrefab: {fileID: 369311246715796509, guid: a8cbcfcfe80c63c41a47c25cb98db4f9,
       type: 3}
-    bridgeWidth: 0
-    bridgeLength: 0
-    neighbourMode: 0
+    bridgeWidth: 0.4
+    bridgeLength: 0.3
+    neighbourMode: 1
     wallColor: {r: 0.7, g: 0.39999998, b: 1, a: 0.69803923}
     wallPrefab: {fileID: 1901219987388566909, guid: 4ae109bd84781594080b6041ba7dd62e,
       type: 3}
     wallThick: 0.05
     wallLengthModify: 0
     wallAlign: 1
-    enclosedMode: 0
+    enclosedMode: 1
   replicateReq:
     min: 0
     max: 4
@@ -274,6 +274,7 @@ MonoBehaviour:
   currentLeaders: []
   rooms: []
   bridges: []
+  walls: []
   autoGenerate: 0
   autoDelay: 0.1
 --- !u!4 &1441528818

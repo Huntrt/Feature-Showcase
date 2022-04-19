@@ -18,6 +18,7 @@ public class RoomGenerator : MonoBehaviour
 	public List<RoomData> currentLeaders = new List<RoomData>();
 	public List<RoomData> rooms = new List<RoomData>();
 	public List<BridgeData> bridges = new List<BridgeData>();
+	public List<WallData> walls = new List<WallData>();
 	public bool autoGenerate; public float autoDelay;
 	GameObject floorGroup, bridgeGroup, wallGroup;
 
@@ -38,20 +39,21 @@ public class RoomGenerator : MonoBehaviour
 		[Header("Floor")]
 		public Color floorColor;
 		public GameObject floorPrefab;
-		public Vector2 floorScale, floorSpacing;
+		public Vector2 floorScale;
+		public float floorSpacing;
 		[Header("Bridge")]
 		public Color bridgeColor;
 		public GameObject bridgePrefab;
 		public float bridgeWidth, bridgeLength;
 		[Tooltip("Will the bridge connect to every room or connect by how room was replicate")]
-		public bool neighbourMode;
+		public bool neighbourMode; //? replicate mode
 		[Header("Wall")]
 		public Color wallColor;
 		public GameObject wallPrefab;
 		public float wallThick, wallLengthModify;
 		public enum WallAlign {center, outside, inside} public WallAlign wallAlign;
 		[Tooltip("Will the wall block all side of room or only block the side has nothing")]
-		public bool enclosedMode;
+		public bool enclosedMode; //? border mode
 	}
 	[Serializable] public class RoomData
 	{
@@ -67,16 +69,25 @@ public class RoomGenerator : MonoBehaviour
 		[HideInInspector] public bool stuck, continuation, escape;
 		[Serializable] public class Structure 
 		{
-			public GameObject floor, bridge, wall;
-			public SpriteRenderer floorRender, bridgeRender, wallRender;
+			public GameObject floor, bridge;
+			public SpriteRenderer floorRender, bridgeRender;
 			public bool[] hasBridge = new bool[4];
 		} 
 	}
 	[Serializable] public class BridgeData
 	{
-		public int index;
-		public Vector2[] connectPosition = new Vector2[2]; 
+		public int index, direction;
 		public Vector2 position;
+		public Vector2[] connectPos = new Vector2[2];
+	}
+
+	[Serializable] public class WallData
+	{
+		public Vector2 position;
+		public GameObject obj;
+		public SpriteRenderer renderer;
+		public int direction, indexBelong;
+		public bool belongToWall, belongToBridge;
 	}
 #endregion
 
@@ -90,17 +101,14 @@ public class RoomGenerator : MonoBehaviour
 	{
 		//Only generating when not generate
 		if(areGenerating == true) {return;}
-		//Preparering to for structure build
+		//Preparing to for structure build
 		PrepareStructure();
-		//Are now generating
 		areGenerating = true;
-		//Generate are no longer complete
 		completeGenerate = false;
-		//Renew the room list
 		rooms.Clear(); rooms = new List<RoomData>();
-		//Renew the bridges list
 		bridges.Clear(); bridges = new List<BridgeData>();
-		//Add the first empty room than replicate at it
+		walls.Clear(); walls = new List<WallData>();
+		//Add the first empty room into list than replicate at it
 		rooms.Add(new RoomData()); StartCoroutine(Replicate(rooms[0], rooms[0]));
 	}
 
@@ -150,7 +158,7 @@ public class RoomGenerator : MonoBehaviour
 				else {if(replicateRate.general >= chance) {result[d] = true;}}
 			}
 		}
-		//Go through all 4 direction to check all of them for potential replicate
+		//Go through all 4 direction to check all of them
 		for (int d = 0; d < 4; d++) {CheckDirection(leader, IndexToDirection(d), d, result[d]);}
 		//This room are no longer the current leader
 		currentLeaders.Remove(leader);
@@ -174,7 +182,7 @@ public class RoomGenerator : MonoBehaviour
 				leader.neighboursCount++; finded.neighboursCount++;
 				//Get the neighbours at current direction of leader room
 				RoomData.Neighbours ld = leader.neighbours[d]; 
-				//Get the neighbours at opposite direction of finded room
+				//Get the neighbours at opposite of current direction of finded room
 				RoomData.Neighbours fo = finded.neighbours[OppositeIndexDirection(d)];
 				//Leader neighbours are filled then set it coordinates and position at FINDED
 				ld.filled = true; ld.coord = finded.coordinates; ld.pos = finded.position;
@@ -222,7 +230,7 @@ public class RoomGenerator : MonoBehaviour
 
 	void CheckDirection(RoomData leader, Vector2 vector, int index, bool needReplicate)
 	{
-		//Get the next room at given direction
+		//Get the next room at given vector at leader coordiantes
 		RoomData nextRoom = FindRoomAtCoordinates(leader.coordinates + vector);
 		//Stop if this direction don't need replication
 		if(!needReplicate) {return;}
@@ -230,17 +238,15 @@ public class RoomGenerator : MonoBehaviour
 		if(leader.stuck)
 		{
 			leader.structure.floorRender.color = customize.debug.stuckColor;
-			//If there already an room ar the next room
 			if(nextRoom != null)
 			{
 				//The leader has continue escape attempt at the next room
 				leader.continuation = true;
 				//The leader transfer it stuck to the next room
 				leader.stuck = false; nextRoom.stuck = true; 
-				//Try to escape at the next room with the same direction
+				//Try to escape at the next room in the same direction
 				StartCoroutine(Replicate(nextRoom, leader, index)); return;
 			}
-			//If there are no room at the next room
 			else
 			{
 				//The leader are no longer stuck
@@ -252,32 +258,30 @@ public class RoomGenerator : MonoBehaviour
 		//If the leader are not stuck
 		if(!leader.stuck)
 		{
-			//Ignore the max replicate restrainy if this leader is an ESCAPE room
+			//Bypass the max replicate restraint if this leader is an ESCAPED room
 			if(!leader.escape && leader.replicateCount >= replicateReq.max) {return;}
-			/// Stop if has reach the needed amount of room or next room are not empty
+			//Stop if has reach the needed amount of room or next room are not empty
 			if(rooms.Count >= roomAmount || nextRoom != null) {return;}
 		}
 		//Create an new temp room
 		RoomData newRoom = new RoomData();
-		//Set the new room coordiates as the leader coordinates increase with this direction
+		//Set the new room coordiates as the leader coordinates increase in this direction
 		newRoom.coordinates = leader.coordinates + vector;
 		//Set the new room's position
 		newRoom.position = new Vector2
 		(
-			//Multiple the new room X coordinates with size + spacing
-			newRoom.coordinates.x * (customize.floorScale.x + customize.floorSpacing.x),
-			//Multiple the new room Y coordinates with size + spacing
-			newRoom.coordinates.y * (customize.floorScale.y + customize.floorSpacing.y)
+			//Multiply the new room X coordinates with floor scale + spacing
+			newRoom.coordinates.x * (customize.floorScale.x + customize.floorSpacing),
+			//Multiply the new room Y coordinates with floor scale + spacing
+			newRoom.coordinates.y * (customize.floorScale.y + customize.floorSpacing)
 		);
 		//Add the new room into list
 		rooms.Add(newRoom);
-		//Update the new room's index
+		//Set the new room's index
 		newRoom.index = rooms.Count-1;
 		//This leader has replicate an new room if it not an escape replicate
 		if(!leader.escape) {leader.replicateCount++;}
-		//Save the coordinates of the new room leader has replicate
 		leader.replicated[index].coord = newRoom.coordinates;
-		//Save the position of the new room leader has replicate
 		leader.replicated[index].pos = newRoom.position;
 		//Begin replicate more at the new room with previous room being leader
 		StartCoroutine(Replicate(newRoom, leader));
@@ -299,86 +303,14 @@ public class RoomGenerator : MonoBehaviour
 
 #endregion
 
-#region Converter
-	Vector2 IndexToDirection(int index)
-	{
-		//@ Return vector depend on index given from 0-3
-		if(index == 0) {return Vector2.up;}
-		if(index == 1) {return Vector2.down;}
-		if(index == 2) {return Vector2.left;}
-		if(index == 3) {return Vector2.right;}
-		//Return zero vector if index given are not 0-3
-		return Vector2.zero;
-	}
-
-	float IndexToRotation(int index)
-	{
-		//@ Return rotation (360 degree) depend on index given from 0-3
-		if(index == 0) {return 0;}
-		if(index == 1) {return 180;}
-		if(index == 2) {return 90;}
-		if(index == 3) {return 270;}
-		//Return -1 if index given are not 0-3 and print warning
-		Debug.LogWarning("There no rotation for "+index+" index"); return -1;
-	}
-
-	int OppositeIndexDirection(int i) 
-	{
-		//Return the number opposite of index given base direction order
-		if(i==0){return 1;} if(i==1){return 0;} if(i==2){return 3;} if(i==3){return 2;}
-		//Call an warning an return -1 if index given are not 0-3
-		Debug.LogWarning("There no opposite direction for index " + i); return -1;
-	}
-#endregion
-
-#region Finder
-	public int GetIndexOfRoom(RoomData room)
-	{
-		//Return the index of given room by go through all the rooms
-		for (int n = 0; n < rooms.Count; n++) {if(rooms[n] == room) {return n;}}
-		//Return -1 if there is no index at given room
-		return -1;
-	}
-
-	public RoomData FindRoomAtIndex(int index)
-	{
-		//Return the room data of room that has the same position as given by go through all the rooms
-		for (int n = 0; n < rooms.Count; n++) {if(n == index) {return rooms[n];}}
-		//Return null if there is no data for room at position given
-		return null;
-	}
-
-	public RoomData FindRoomAtCoordinates(Vector2 coordinates)
-	{
-		//Return the room data of room that has the same coordinates as given by go through all the rooms
-		for (int n = 0; n < rooms.Count; n++) {if(rooms[n].coordinates == coordinates) {return rooms[n];}}
-		//Return null if there is no data for room at coordinates given
-		return null;
-	}
-
-	public RoomData FindRoomAtPosition(Vector2 position)
-	{
-		//Return the room data of room that has the same position as given by go through all the rooms
-		for (int n = 0; n < rooms.Count; n++) {if(rooms[n].position == position) {return rooms[n];}}
-		//Return null if there is no data for room at position given
-		return null;
-	}
-#endregion
-
 #region Build
 	void PrepareStructure()
 	{
-		//Destroy the old floor group if it exist
 		if(floorGroup != null) {Destroy(floorGroup);}
-		//Create an new group object for floor then edit it name
-		floorGroup = new GameObject(); floorGroup.name = "Floor Group";
-		//Destroy the old bridge group if it exist
 		if(bridgeGroup != null) {Destroy(bridgeGroup);}
-		//Create an new group object for bridge then edit it name
-		bridgeGroup = new GameObject(); bridgeGroup.name = "Bridge Group";
-		//Destroy the old wall group if it exist
 		if(wallGroup != null) {Destroy(wallGroup);}
-		//Create an new group object for wall then edit it name
+		floorGroup = new GameObject(); floorGroup.name = "Floor Group";
+		bridgeGroup = new GameObject(); bridgeGroup.name = "Bridge Group";
 		wallGroup = new GameObject(); wallGroup.name = "Wall Group";
 	}
 
@@ -389,36 +321,32 @@ public class RoomGenerator : MonoBehaviour
 		//Go through all the room to go through 4 direction of each room
 		for (int r = 0; r < rooms.Count; r++) for (int d = 0; d < 4; d++)
 		{
-			//Get room position and empty next position in this direction
 			Vector2 roomP = rooms[r].position; Vector2 nextP = Vector2.zero; 
-			///Set the next position as NEIGHBOURS position if not using connect mode
+			///Set the next position as NEIGHBOURS position if using neighbours mode
 			if(customize.neighbourMode) {nextP = rooms[r].neighbours[d].pos;} 
-			///Set the next position as REPLICATED position if using connect mode
+			///Set the next position as REPLICATED position if using not using neighbours mode
 			else {nextP = rooms[r].replicated[d].pos;}
-			//Stop if the next positon are zero
-			if(nextP == Vector2.zero) {continue;}
-			//Set position for the bridge at middle point between current and next room
+			//Find the room at next position as next room
+			RoomData nextRoom = FindRoomAtPosition(nextP);
+			//Skip this direction if the next positon are zero or the opposite of next room already has bridge
+			if(nextP == Vector2.zero || nextRoom.structure.hasBridge[OppositeIndexDirection(d)]) {continue;}
+			//Set position for the bridge at middle point between the current and next room
 			Vector2 pos = new Vector2(roomP.x + (nextP.x - roomP.x)/2, roomP.y + (nextP.y - roomP.y)/2);
 			//Create an new bridge data
 			BridgeData newBridge = new BridgeData();
-			//Set the new bridge's index and position
-			newBridge.index = indexCounter; newBridge.position = pos;
+			//Assign bridge position to position calculated
+			newBridge.position = pos; 
+			//Set the bridge rotation as direction index
+			newBridge.direction = d;
 			//Set the bridge 1st connection as current room position and 2nd as room at next position
-			newBridge.connectPosition[0] = roomP; newBridge.connectPosition[1] = nextP;
-			//If the new bridge is not an duplicate
-			if(!bridges.Contains(newBridge))
-			{
-				//The current room now has bridge at current direction
-				rooms[r].structure.hasBridge[d] = true;
-				//The next room new has bridge at opposite direction
-				FindRoomAtPosition(nextP).structure.hasBridge[OppositeIndexDirection(d)] = true;
-				//Increase the bridge index counter
-				indexCounter++;
-				//Add the newly bridge into list
-				bridges.Add(newBridge);
-				//Build the bridge of this room at position and rotation of index direction
-				BuildBridge(rooms[r], pos, IndexToRotation(d), newBridge.index);
-			}
+			newBridge.connectPos[0] = roomP; newBridge.connectPos[1] = nextP;
+			//The current room now has bridge at current direction
+			rooms[r].structure.hasBridge[d] = true;
+			//The next room now has bridge at opposite of current direction
+			nextRoom.structure.hasBridge[OppositeIndexDirection(d)] = true;
+			newBridge.index = indexCounter; indexCounter++; bridges.Add(newBridge);
+			//Build the bridge of this room at position, rotation and index
+			BuildBridge(rooms[r], newBridge.position, IndexToRotation(d), newBridge.index);
 		}
 	}
 
@@ -429,57 +357,41 @@ public class RoomGenerator : MonoBehaviour
 		{
 			//Save the current room position
 			Vector2 roomPos = rooms[r].position;
-			//Get the position that has pushed outward in this direction from room
+			//Get the position as pushed outward in this direction from room position
 			Vector2 outPos = WallOutwardPosition(roomPos, d);
-			//Get the current adjacent by checking direction Up/Down = 0 and Left/Right = 1
-			int adjacent = 0; if(d==2 || d==3) {adjacent = 1;}
-			//Get the rotation of current index then decrease it by -90
+			//Get the current adjacent by checking direction Up/Down = false and Left/Right = false
+			bool adjacent = true; if(d==2 || d==3) {adjacent = false;}
+			//Get the rotation of current index direction then decrease it by -90
 			float rot = IndexToRotation(d) - 90;
-			//Get the half of the wall thick value as positive if up/right and negative if left/down
-			float thick = customize.wallThick/2; if(d==1||d==2) {thick = -thick;}
+			//Get value to align as half of wall thick if direction up/right and negative it if left/down
+			float align = customize.wallThick/2; if(d==1||d==2) {align = -align;}
 			//The length of wall
 			float length = 0;
-			//Get the wall alignment choosed
+			//@ Edit length and align base on wall align mode
 			switch(customize.wallAlign.ToString())
 			{
-				//Length to 1 and thick to 0 if choose center mode
-				case "center": length = 1; thick = 0; break;
-				//Length to 2 and not chaging thick if choose outside mode 
+				case "center": length = 1; align = 0; break;
 				case "outside": length = 2; break;
-				//Length to 0 and thick to negative if choose inside mode 
-				case "inside": length = 0; thick = -thick; break;
+				case "inside": length = 0; align = -align; break;
 			}
 			//Multiply length with wall thick to know how many thick need to add onto length
 			length *= customize.wallThick;
-			//If adjacent are UP/DOWN
-			if(adjacent == 0)
-			{
-				//Increase Y axis of out position with thick
-				outPos.y += thick;
-				//Increase floor scale X axis with length
-				length += customize.floorScale.x;
-			}
-			//If adjacent are LEFT/RIGHT
-			else
-			{
-				//Increase X axis of out position with thick
-				outPos.x += thick;
-				//Increase floor scale Y axis with length
-				length += customize.floorScale.y;
-			}
-			/// If using Enclosed mode
+			//If adjacent are UP/DOWN - increase outpos Y with align and length with X floor scale
+			if(adjacent) {outPos.y += align; length += customize.floorScale.x;}
+			//If adjacent are UP/DOWN - increase outpos X with align and length with Y floor scale
+			else{outPos.x += align; length += customize.floorScale.y;}
+			/// If using enclosed mode
 			if(customize.enclosedMode)
 			{
 				//Build an wall normally for this room if this direction don't has bridge
-				if(!rooms[r].structure.hasBridge[d]) {BuildWall(rooms[r], outPos, rot, r, d, length);}
-				//Create an gate for this room if this direction if it has bridge
-				else {Wall_BuildGate(r, d, outPos, roomPos, rot, adjacent, length);}
+				if(!rooms[r].structure.hasBridge[d]) {BuildWall(rooms[r], null, outPos, rot, r, d, length);}
+				//Create an gate for this room in this direction if it has bridge
+				else {BuildWallGate(r, d, outPos, roomPos, rot, adjacent, length);}
 			}
-			/// Else now in connect mode instead with direction has NO neighbours
+			/// If not using enclosed mode while this direction has NO neighbours
 			if(!customize.enclosedMode && !rooms[r].neighbours[d].filled)
 			{
 				//? This are for cutting part of wall that poke into floor
-				//The value to cut off this wall's length are wall thick
 				float cutoff = customize.wallThick;
 				//Get the wall alignment choosed
 				switch(customize.wallAlign.ToString())
@@ -490,7 +402,7 @@ public class RoomGenerator : MonoBehaviour
 					case "inside": cutoff = -cutoff; break;
 				}
 				//If adjacent are UP/DOWN
-				if(adjacent == 0)
+				if(adjacent)
 				{
 					//Cut off length and move to RIGHT if room's LEFT neighbours filled
 					if(rooms[r].neighbours[2].filled) {length -= cutoff; outPos.x += cutoff/2;}
@@ -506,15 +418,15 @@ public class RoomGenerator : MonoBehaviour
 					if(rooms[r].neighbours[1].filled) {length -= cutoff; outPos.y += cutoff/2;}
 				}
 				//Build an wall for current room at out position and rotation
-				BuildWall(rooms[r], outPos, rot, r, d, length);
+				BuildWall(rooms[r], null, outPos, rot, r, d, length);
 			}
 		}
+		BuildWallRailing();
 	}
 
-	void Wall_BuildGate(int r, int d, Vector2 outPos, Vector2 roomPos, float rot, int adjacent, float length)
+	void BuildWallGate(int r, int d, Vector2 outPos, Vector2 roomPos, float rot, bool adjacent, float length)
 	{
-		//Center are room position X axis if adjacent up/down or Y if adjacent left/right
-		float center = 0; if(adjacent == 0) {center = roomPos.x;} else {center = roomPos.y;}
+		float center = center = roomPos.x; if(!adjacent) {center = roomPos.y;}
 		//Get the bridge value by increase half of bridge width from center
 		float bridge = center + (customize.bridgeWidth/2);
 		//Get the edge value by increase half of length from center
@@ -523,42 +435,69 @@ public class RoomGenerator : MonoBehaviour
 		float sidePOS = (bridge + (edge - bridge)/2);
 		//The negative side get by decrease muitple value from the positive side
 		float sideNEG = sidePOS - ((sidePOS - bridge)*2) - customize.bridgeWidth;
-		//The current are now the value between edge and bridge
+		//The current length are now the value between edge and bridge
 		length = edge - bridge;
 		//If adjacent are UP/DOWN
-		if(adjacent == 0)
+		if(adjacent)
 		{
 			//Build wall of room at side positive as X and outward as Y with custom length
-			BuildWall(rooms[r], new Vector2(sidePOS, outPos.y), rot, r,d, length);
+			BuildWall(rooms[r], null, new Vector2(sidePOS, outPos.y), rot, r,d, length);
 			//Build wall of room at side negative as X and outward as Y with custom length
-			BuildWall(rooms[r], new Vector2(sideNEG, outPos.y), rot, r,d, length);
+			BuildWall(rooms[r], null, new Vector2(sideNEG, outPos.y), rot, r,d, length);
 		}
 		//If adjacent are LEFT/RIGHT
 		else 
 		{
 			//Build wall of room at outward as X and side positive as Y with custom length
-			BuildWall(rooms[r], new Vector2(outPos.x, sidePOS), rot, r,d, length);
+			BuildWall(rooms[r], null, new Vector2(outPos.x, sidePOS), rot, r,d, length);
 			//Build wall of room at outward as X and side negative as Y with custom length
-			BuildWall(rooms[r], new Vector2(outPos.x, sideNEG), rot, r,d, length);
+			BuildWall(rooms[r], null, new Vector2(outPos.x, sideNEG), rot, r,d, length);
 		}
 	}
 
-	Vector2 WallOutwardPosition(Vector2 pos, int direction)
+	void BuildWallRailing()
 	{
-		//Try the direction given
-		switch(direction)
+		//Go through all the bridge
+		for (int b = 0; b < bridges.Count; b++)
 		{
-			//For UP - only Y will INCREASE with half of floor size
-			case 0: return new Vector2(pos.x, pos.y + (customize.floorScale.y/2));
-			//For DOWN - only Y will DECREASE with half of floor size
-			case 1: return new Vector2(pos.x, pos.y - (customize.floorScale.y/2)); 
-			//For LEFT - only X will DECREASE with half of floor size
-			case 2: return new Vector2(pos.x - (customize.floorScale.x/2), pos.y); 
-			//For RIGHT - only X will INCREASE with half of floor size
-			case 3: return new Vector2(pos.x + (customize.floorScale.x/2), pos.y);
+			//Get th bridge direction
+			int dir = bridges[b].direction;
+			//The default adjacent are true for up/down and false for left/right if direction are 2/3
+			bool adjacent = true; if(dir == 2 || dir == 3) {adjacent = false;}
+			//The positive and negative direction for wall
+			int dirPos = 0; int dirNeg = 0;
+			//Set the side positive and negative position bridge position
+			Vector2 sidePos = bridges[b].position; Vector2 sideNeg = bridges[b].position;
+			//Get value to align as half of wall thick
+			float align = customize.wallThick/2;
+			//The length of wall
+			float length = 0;
+			//@ Edit length and align base on wall align mode
+			switch(customize.wallAlign.ToString())
+			{
+				case "center": length = 1; align = 0; break;
+				case "outside": length = 0; break;
+				case "inside": length = 2; align = -align; break;
+			}
+			//Multiply length with wall thick to know how many thick need to add onto length
+			length = (length * customize.wallThick) + customize.floorSpacing;
+			//If adjacent are UP/DOWN
+			if(adjacent)
+			{
+				dirPos = 0; dirNeg = 1;
+				sidePos.x += (customize.bridgeWidth/2 + align);
+				sideNeg.x -= (customize.bridgeWidth/2 + align);
+			}
+			//If adjacent are LEFT/RIGHT
+			else
+			{
+				dirNeg = 2; dirPos = 3;
+				sidePos.y += (customize.bridgeWidth/2 + align);
+				sideNeg.y -= (customize.bridgeWidth/2 + align);
+			}
+			BuildWall(null, bridges[b], sidePos, IndexToRotation(dirPos), b , dirPos, length);
+			BuildWall(null, bridges[b], sideNeg, IndexToRotation(dirNeg), b , dirNeg, length);
 		}
-		//Return zero if the direction are not 0-3
-		return Vector2.zero;
 	}
 
 	void BuildFloor(RoomData room, RoomData prev)
@@ -593,18 +532,118 @@ public class RoomGenerator : MonoBehaviour
 		room.structure.bridgeRender.color = customize.bridgeColor;
 	}
 
-	void BuildWall(RoomData room , Vector2 pos, float rot, int belong, int direction, float length)
+	void BuildWall(RoomData room,BridgeData bridge,Vector2 pos,float rot,int index,int dir,float length)
 	{
 		//Create the wall object at given position and rotation
 		GameObject wall = Instantiate(customize.wallPrefab, pos, Quaternion.Euler(0,0,rot));
 		//@ Setup the newly created wall
 		wall.transform.SetParent(wallGroup.transform);
 		wall.transform.localScale = new Vector2(customize.wallThick, length + customize.wallLengthModify);
-		wall.name = "Wall of Room " + belong + " as index " + direction;
-		room.structure.wall = wall;
-		room.structure.wallRender = wall.GetComponent<SpriteRenderer>();
-		//Set the wall color to default color
-		room.structure.wallRender.color = customize.wallColor;
+		//@ Create and setup the new wall data
+		WallData newWall = new WallData();
+		newWall.obj = wall;
+		newWall.position = pos;
+		newWall.direction = dir;
+		newWall.indexBelong = index;
+		newWall.renderer = wall.GetComponent<SpriteRenderer>();
+		newWall.renderer.color = customize.wallColor;
+		//Setup the wall that belong to room
+		if(room != null)
+		{
+			wall.name = "Wall of Room " + index + " in direction " + dir;
+			newWall.belongToWall = true;
+		}
+		//Setup the wall that belong to bridge
+		if(bridge != null)
+		{
+			wall.name = "Wall of Bridge " + index + " in direction " + dir;
+			newWall.belongToBridge = true;
+		}
+		walls.Add(newWall);
+	}
+#endregion
+
+#region Converter
+	Vector2 IndexToDirection(int index)
+	{
+		//@ Return vector depend on index given from 0-3
+		if(index == 0) {return Vector2.up;}
+		if(index == 1) {return Vector2.down;}
+		if(index == 2) {return Vector2.left;}
+		if(index == 3) {return Vector2.right;}
+		//Return zero vector if index given are not 0-3
+		return Vector2.zero;
+	}
+
+	float IndexToRotation(int index)
+	{
+		//@ Return rotation (360 degree) depend on index given from 0-3
+		if(index == 0) {return 0;}
+		if(index == 1) {return 180;}
+		if(index == 2) {return 90;}
+		if(index == 3) {return 270;}
+		//Return -1 if index given are not 0-3 and print warning
+		Debug.LogWarning("There no rotation for "+index+" index"); return -1;
+	}
+
+	int OppositeIndexDirection(int i) 
+	{
+		//Return the number opposite of index given base direction order
+		if(i==0){return 1;} if(i==1){return 0;} if(i==2){return 3;} if(i==3){return 2;}
+		//Call an warning an return -1 if index given are not 0-3
+		Debug.LogWarning("There no opposite direction for index " + i); return -1;
+	}
+	
+	Vector2 WallOutwardPosition(Vector2 pos, int direction)
+	{
+		//Try the direction given
+		switch(direction)
+		{
+			//For UP - only Y will INCREASE with half of floor size
+			case 0: return new Vector2(pos.x, pos.y + (customize.floorScale.y/2));
+			//For DOWN - only Y will DECREASE with half of floor size
+			case 1: return new Vector2(pos.x, pos.y - (customize.floorScale.y/2)); 
+			//For LEFT - only X will DECREASE with half of floor size
+			case 2: return new Vector2(pos.x - (customize.floorScale.x/2), pos.y); 
+			//For RIGHT - only X will INCREASE with half of floor size
+			case 3: return new Vector2(pos.x + (customize.floorScale.x/2), pos.y);
+		}
+		//Return zero if the direction are not 0-3
+		return Vector2.zero;
+	}
+#endregion
+
+#region Finder
+	public int GetIndexOfRoom(RoomData room)
+	{
+		//Return the index of given room by go through all the rooms
+		for (int n = 0; n < rooms.Count; n++) {if(rooms[n] == room) {return n;}}
+		//Return -1 if there is no index at given room
+		return -1;
+	}
+
+	public RoomData FindRoomAtIndex(int index)
+	{
+		//Return the room data of room that has the same position as given by go through all the rooms
+		for (int n = 0; n < rooms.Count; n++) {if(n == index) {return rooms[n];}}
+		//Return null if there is no data for room at position given
+		return null;
+	}
+
+	public RoomData FindRoomAtCoordinates(Vector2 coordinates)
+	{
+		//Return the room data of room that has the same coordinates as given by go through all the rooms
+		for (int n = 0; n < rooms.Count; n++) {if(rooms[n].coordinates == coordinates) {return rooms[n];}}
+		//Return null if there is no data for room at coordinates given
+		return null;
+	}
+
+	public RoomData FindRoomAtPosition(Vector2 position)
+	{
+		//Return the room data of room that has the same position as given by go through all the rooms
+		for (int n = 0; n < rooms.Count; n++) {if(rooms[n].position == position) {return rooms[n];}}
+		//Return null if there is no data for room at position given
+		return null;
 	}
 #endregion
 }
