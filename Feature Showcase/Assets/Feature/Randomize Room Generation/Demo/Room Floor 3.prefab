@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 4961771339570833654}
   - component: {fileID: 5511347419252422390}
   m_Layer: 0
-  m_Name: Triangle
+  m_Name: Brick
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -70,7 +70,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 1
   m_Sprite: {fileID: 21300000, guid: ed61a8ac948ce4c4eaf9742c73ea0179, type: 3}
   m_Color: {r: 1, g: 0.7050039, b: 0.3, a: 1}
   m_FlipX: 0
@@ -178,7 +178,7 @@ GameObject:
   - component: {fileID: 3828028712464482210}
   - component: {fileID: 4525135168230042287}
   m_Layer: 0
-  m_Name: Triangle (1)
+  m_Name: Brick
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -237,7 +237,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 1
   m_Sprite: {fileID: 21300000, guid: ed61a8ac948ce4c4eaf9742c73ea0179, type: 3}
   m_Color: {r: 1, g: 0.7050039, b: 0.3, a: 1}
   m_FlipX: 0
@@ -260,7 +260,7 @@ GameObject:
   - component: {fileID: 983936833657420702}
   - component: {fileID: 563111756000698732}
   m_Layer: 0
-  m_Name: Triangle (2)
+  m_Name: Brick
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -319,7 +319,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 1
   m_Sprite: {fileID: 21300000, guid: ed61a8ac948ce4c4eaf9742c73ea0179, type: 3}
   m_Color: {r: 1, g: 0.7050039, b: 0.3, a: 1}
   m_FlipX: 0

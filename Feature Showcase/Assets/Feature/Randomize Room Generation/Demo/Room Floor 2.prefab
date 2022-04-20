@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 6280136840397980286}
   - component: {fileID: 9124715667873534385}
   m_Layer: 0
-  m_Name: Triangle
+  m_Name: Tree
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -70,7 +70,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 1
   m_Sprite: {fileID: 21300000, guid: 993262ea8acc0984e9a80b7f83253df5, type: 3}
   m_Color: {r: 0.3614117, g: 0.8, b: 0.32, a: 1}
   m_FlipX: 0
@@ -93,7 +93,7 @@ GameObject:
   - component: {fileID: 1162545934014062415}
   - component: {fileID: 7206709584320681680}
   m_Layer: 0
-  m_Name: Triangle (1)
+  m_Name: Tree
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -152,7 +152,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 1
   m_Sprite: {fileID: 21300000, guid: 993262ea8acc0984e9a80b7f83253df5, type: 3}
   m_Color: {r: 0.3614117, g: 0.8, b: 0.32, a: 1}
   m_FlipX: 0
@@ -261,7 +261,7 @@ GameObject:
   - component: {fileID: 1819490566736407416}
   - component: {fileID: 5474265570939996501}
   m_Layer: 0
-  m_Name: Triangle (3)
+  m_Name: Tree
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -320,7 +320,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 1
   m_Sprite: {fileID: 21300000, guid: 993262ea8acc0984e9a80b7f83253df5, type: 3}
   m_Color: {r: 0.3614117, g: 0.8, b: 0.32, a: 1}
   m_FlipX: 0
@@ -343,7 +343,7 @@ GameObject:
   - component: {fileID: 4525301183777564578}
   - component: {fileID: 1014697444084762990}
   m_Layer: 0
-  m_Name: Triangle (2)
+  m_Name: Tree
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -402,7 +402,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 1
   m_Sprite: {fileID: 21300000, guid: 993262ea8acc0984e9a80b7f83253df5, type: 3}
   m_Color: {r: 0.3614117, g: 0.8, b: 0.32, a: 1}
   m_FlipX: 0
