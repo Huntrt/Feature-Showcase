@@ -12,6 +12,6 @@ EditorBuildSettings:
     path: Assets/Feature/Flexible Text Background/Flexible Text Background.unity
     guid: 8161a07ffe59749418a559a1ec6a4b9a
   - enabled: 1
-    path: Assets/Feature/Randomize Room Generation/Randomize Room Generation.unity
+    path: Assets/Feature/Randomize Room Generation/Demo/Randomize Room Generation.unity
     guid: f7bea791b89bc104186a32e12b026601
   m_configObjects: {}
