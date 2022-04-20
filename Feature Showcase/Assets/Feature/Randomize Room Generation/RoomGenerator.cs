@@ -230,11 +230,9 @@ public class RoomGenerator : MonoBehaviour
 
 	void CheckDirection(RoomData leader, Vector2 dir, int index, bool needReplicate)
 	{
-		//Get the next room at given direction at leader coordiantes
+		//Get the next room at given direction increase with leader coordiantes
 		RoomData nextRoom = FindRoomAtCoordinates(leader.coordinates + dir);
-		//Stop if this direction don't need replication
 		if(!needReplicate) {return;}
-		//! If the leader are stuck
 		if(leader.stuck)
 		{
 			leader.structure.floorRender.color = customize.debug.stuckColor;
@@ -255,7 +253,6 @@ public class RoomGenerator : MonoBehaviour
 				leader.escape = true;
 			}
 		}
-		//If the leader are not stuck
 		if(!leader.stuck)
 		{
 			//Bypass the max replicate restraint if this leader is an ESCAPED room
@@ -327,16 +324,11 @@ public class RoomGenerator : MonoBehaviour
 			else {nextP = rooms[r].replicated[d].pos;}
 			//Find the room at next position as next room
 			RoomData nextRoom = FindRoomAtPosition(nextP);
-			//Skip this direction if the next positon are zero or the opposite of next room already has bridge
+			///Skip this direction if next positon are zero or opposite of next room already has bridge
 			if(nextP == Vector2.zero || nextRoom.structure.hasBridge[OppositeIndexDirection(d)]) {continue;}
 			//Set position for the bridge at middle point between the current and next room
 			Vector2 pos = new Vector2(roomP.x + (nextP.x - roomP.x)/2, roomP.y + (nextP.y - roomP.y)/2);
-			//Create an new bridge data
-			BridgeData newBridge = new BridgeData();
-			//Assign bridge position to position calculated
-			newBridge.position = pos; 
-			//Set the bridge rotation as direction index
-			newBridge.direction = d;
+			BridgeData newBridge = new BridgeData(); newBridge.position = pos;  newBridge.direction = d;
 			//Set the bridge 1st connection as current room position and 2nd as room at next position
 			newBridge.connectPos[0] = roomP; newBridge.connectPos[1] = nextP;
 			//The current room now has bridge at current direction
