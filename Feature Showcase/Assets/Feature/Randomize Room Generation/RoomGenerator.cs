@@ -12,15 +12,15 @@ public class RoomGenerator : MonoBehaviour
 	public ReplicateRequirement replicateReq = new ReplicateRequirement();
 	[Tooltip("The percent chance of generate")]
 	public RateSetting replicateRate = new RateSetting();
-	[HideInInspector]
-	public bool completeGenerate, areGenerating; 
-	public event Action onGenerated;
 	public List<RoomData> currentLeaders = new List<RoomData>();
 	public List<RoomData> rooms = new List<RoomData>();
 	public List<BridgeData> bridges = new List<BridgeData>();
 	public List<WallData> walls = new List<WallData>();
 	public bool autoGenerate; public float autoDelay;
 	GameObject floorGroup, bridgeGroup, wallGroup;
+	[HideInInspector]
+	public bool hasGenerate, areGenerating; 
+	public event Action completeGeneration, structureBuilded;
 
 #region Classes
 	[Serializable] public class ReplicateRequirement 
@@ -38,7 +38,7 @@ public class RoomGenerator : MonoBehaviour
 		[Serializable] public class DebugInfo {public Color leaderColor, stuckColor, endColor;}
 		[Header("Floor")]
 		public Color floorColor;
-		public GameObject floorPrefab;
+		public GameObject[] floorPrefabs;
 		public Vector2 floorScale;
 		public float floorSpacing;
 		[Header("Bridge")]
@@ -104,7 +104,7 @@ public class RoomGenerator : MonoBehaviour
 		//Preparing to for structure build
 		PrepareStructure();
 		areGenerating = true;
-		completeGenerate = false;
+		hasGenerate = false;
 		rooms.Clear(); rooms = new List<RoomData>();
 		bridges.Clear(); bridges = new List<BridgeData>();
 		walls.Clear(); walls = new List<WallData>();
@@ -285,12 +285,14 @@ public class RoomGenerator : MonoBehaviour
 
 	void GeneratingFinish()
 	{
-		//Call the on generated event
-		onGenerated?.Invoke();
+		//Call the complete generation event
+		completeGeneration?.Invoke();
 		//Has completed generation
-		areGenerating = false; completeGenerate = true;
+		areGenerating = false; hasGenerate = true;
 		//Setting up bridge and wall
 		SetupBridge(); SetupWall();
+		//Call the structure builded event
+		structureBuilded?.Invoke();
 		//Reset all the floor color to default
 		for (int r = 0; r < rooms.Count; r++) {rooms[r].structure.floorRender.color = customize.floorColor;}
 		//Auto generate if wanted when complete the current generate
@@ -493,8 +495,10 @@ public class RoomGenerator : MonoBehaviour
 	{
 		//Don't build floor if it has already been build
 		if(room.structure.floor != null) {return;}
-		//Build the floor at the room given position with no rotation
-		GameObject floor = Instantiate(customize.floorPrefab, room.position, Quaternion.identity);
+		//Randomly choose which type of floor prefabs gonna spawn
+		GameObject prefab = customize.floorPrefabs[UnityEngine.Random.Range(0,customize.floorPrefabs.Length)];
+		//Build the floor prefab has get at the room given position with no rotation
+		GameObject floor = Instantiate(prefab, room.position, Quaternion.identity);
 		//@ Setup the newly floor bridge
 		floor.transform.SetParent(floorGroup.transform);
 		floor.transform.localScale = customize.floorScale;

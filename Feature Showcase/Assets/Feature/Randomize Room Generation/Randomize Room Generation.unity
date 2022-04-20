@@ -159,7 +159,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.06659801, g: 0.0665, b: 0.07, a: 0}
+  m_BackGroundColor: {r: 0.064615384, g: 0.064615384, b: 0.07, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -235,24 +235,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3321522df63a8ba4dbbc31028bc13e84, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  roomAmount: 10
+  roomAmount: 100
   customize:
     debug:
       leaderColor: {r: 0.39999998, g: 1, b: 0.39999998, a: 1}
       stuckColor: {r: 1, g: 0.39999998, b: 0.39999998, a: 1}
       endColor: {r: 1, g: 0.65, b: 0.39999998, a: 1}
-    floorColor: {r: 1, g: 1, b: 1, a: 1}
-    floorPrefab: {fileID: 4558046587480059573, guid: 8b54a26b9a8e8eb47bcbb1f5112ba983,
-      type: 3}
+    floorColor: {r: 0.95, g: 0.95, b: 0.95, a: 1}
+    floorPrefabs:
+    - {fileID: 4558046587480059573, guid: 8b54a26b9a8e8eb47bcbb1f5112ba983, type: 3}
+    - {fileID: 4558046587480059573, guid: 2884626c8e7752640b06633609f0b182, type: 3}
+    - {fileID: 4558046587480059573, guid: 52062013806b7ed4a9bcbe41847df4ae, type: 3}
+    - {fileID: 4558046587480059573, guid: c3ab154a4f8a20645a1bd499a0d57af0, type: 3}
     floorScale: {x: 1, y: 1}
     floorSpacing: 0.3
-    bridgeColor: {r: 0.5, g: 0.66666675, b: 1, a: 1}
+    bridgeColor: {r: 0.95, g: 0.95, b: 0.95, a: 1}
     bridgePrefab: {fileID: 369311246715796509, guid: a8cbcfcfe80c63c41a47c25cb98db4f9,
       type: 3}
     bridgeWidth: 0.4
     bridgeLength: 0.3
     neighbourMode: 1
-    wallColor: {r: 0.7, g: 0.39999998, b: 1, a: 0.69803923}
+    wallColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
     wallPrefab: {fileID: 1901219987388566909, guid: 4ae109bd84781594080b6041ba7dd62e,
       type: 3}
     wallThick: 0.05
@@ -269,14 +272,14 @@ MonoBehaviour:
     down: 0
     left: 0
     right: 0
-  completeGenerate: 0
-  areGenerating: 0
   currentLeaders: []
   rooms: []
   bridges: []
   walls: []
   autoGenerate: 0
   autoDelay: 0.1
+  hasGenerate: 0
+  areGenerating: 0
 --- !u!4 &1441528818
 Transform:
   m_ObjectHideFlags: 0
