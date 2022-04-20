@@ -154,7 +154,7 @@ public class RoomGenerator : MonoBehaviour
 					if(d == 2 && replicateRate.left  >= chance) {result[d] = true;}
 					if(d == 3 && replicateRate.right >= chance) {result[d] = true;}
 				}
-				//Return the result base on general the rate compare to chance
+				//Else set the result base on general the rate compare to chance
 				else {if(replicateRate.general >= chance) {result[d] = true;}}
 			}
 		}
@@ -228,10 +228,10 @@ public class RoomGenerator : MonoBehaviour
 	#endregion
 	}
 
-	void CheckDirection(RoomData leader, Vector2 vector, int index, bool needReplicate)
+	void CheckDirection(RoomData leader, Vector2 dir, int index, bool needReplicate)
 	{
-		//Get the next room at given vector at leader coordiantes
-		RoomData nextRoom = FindRoomAtCoordinates(leader.coordinates + vector);
+		//Get the next room at given direction at leader coordiantes
+		RoomData nextRoom = FindRoomAtCoordinates(leader.coordinates + dir);
 		//Stop if this direction don't need replication
 		if(!needReplicate) {return;}
 		//! If the leader are stuck
@@ -263,10 +263,9 @@ public class RoomGenerator : MonoBehaviour
 			//Stop if has reach the needed amount of room or next room are not empty
 			if(rooms.Count >= roomAmount || nextRoom != null) {return;}
 		}
-		//Create an new temp room
 		RoomData newRoom = new RoomData();
-		//Set the new room coordiates as the leader coordinates increase in this direction
-		newRoom.coordinates = leader.coordinates + vector;
+		//Set the new room coordiates as the leader coordinates increase with direction
+		newRoom.coordinates = leader.coordinates + dir;
 		//Set the new room's position
 		newRoom.position = new Vector2
 		(
@@ -357,11 +356,11 @@ public class RoomGenerator : MonoBehaviour
 		{
 			//Save the current room position
 			Vector2 roomPos = rooms[r].position;
-			//Get the position as pushed outward in this direction from room position
+			//Get the out position as pushed outward in this direction from room position
 			Vector2 outPos = WallOutwardPosition(roomPos, d);
-			//Get the current adjacent by checking direction Up/Down = false and Left/Right = false
-			bool adjacent = true; if(d==2 || d==3) {adjacent = false;}
-			//Get the rotation of current index direction then decrease it by -90
+			//The default adjacent are true for up/down and false for left/right if direction are 2/3
+			bool adjacent = true; if(d == 2 || d == 3) {adjacent = false;}
+			//Get the rotation of current index direction then decrease it by 90
 			float rot = IndexToRotation(d) - 90;
 			//Get value to align as half of wall thick if direction up/right and negative it if left/down
 			float align = customize.wallThick/2; if(d==1||d==2) {align = -align;}
@@ -379,7 +378,8 @@ public class RoomGenerator : MonoBehaviour
 			//If adjacent are UP/DOWN - increase outpos Y with align and length with X floor scale
 			if(adjacent) {outPos.y += align; length += customize.floorScale.x;}
 			//If adjacent are UP/DOWN - increase outpos X with align and length with Y floor scale
-			else{outPos.x += align; length += customize.floorScale.y;}
+			else {outPos.x += align; length += customize.floorScale.y;}
+
 			/// If using enclosed mode
 			if(customize.enclosedMode)
 			{
@@ -411,7 +411,7 @@ public class RoomGenerator : MonoBehaviour
 				}
 				//If adjacent are LEFT/RIGHT
 				else
-				{	
+				{
 					//Cut off length and move DOWN if room's UP neighbours filled
 					if(rooms[r].neighbours[0].filled) {length -= cutoff; outPos.y -= cutoff/2;}
 					//Cut off length and move UP if DOWN room's neighbours filled
@@ -460,27 +460,24 @@ public class RoomGenerator : MonoBehaviour
 		//Go through all the bridge
 		for (int b = 0; b < bridges.Count; b++)
 		{
-			//Get th bridge direction
+			//Get the bridge direction
 			int dir = bridges[b].direction;
 			//The default adjacent are true for up/down and false for left/right if direction are 2/3
 			bool adjacent = true; if(dir == 2 || dir == 3) {adjacent = false;}
 			//The positive and negative direction for wall
 			int dirPos = 0; int dirNeg = 0;
-			//Set the side positive and negative position bridge position
-			Vector2 sidePos = bridges[b].position; Vector2 sideNeg = bridges[b].position;
 			//Get value to align as half of wall thick
-			float align = customize.wallThick/2;
-			//The length of wall
-			float length = 0;
+			float align = customize.wallThick/2; float length = 0;
 			//@ Edit length and align base on wall align mode
 			switch(customize.wallAlign.ToString())
 			{
 				case "center": length = 1; align = 0; break;
-				case "outside": length = 0; break;
-				case "inside": length = 2; align = -align; break;
+				case "inside": if(customize.enclosedMode) {length = 2;} align = -align; break;
 			}
-			//Multiply length with wall thick to know how many thick need to add onto length
+			//Multiply current length with wall thick then increase with spacing for the correct length
 			length = (length * customize.wallThick) + customize.floorSpacing;
+			//Set the side positive and negative position as bridge position
+			Vector2 sidePos = bridges[b].position; Vector2 sideNeg = bridges[b].position;
 			//If adjacent are UP/DOWN
 			if(adjacent)
 			{
