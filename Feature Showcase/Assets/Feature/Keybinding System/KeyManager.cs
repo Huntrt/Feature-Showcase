@@ -4,7 +4,6 @@ using TMPro;
 
 public class KeyManager : MonoBehaviour
 {
-	[SerializeField] bool DDOL;
 	public bool areAssigning;
 	[SerializeField] string waitingMessage;
 	[SerializeField] string assignAction;
@@ -13,7 +12,9 @@ public class KeyManager : MonoBehaviour
 	{get {if(_i==null) {_i = GameObject.FindObjectOfType<KeyManager>();} return _i;}} 
 
 	/// Added key here... ///
-	public KeyCode Move, Jump, Attack;
+	public KeyCode Up, Down, Left, Right;
+
+	//! Try out if it cap sensitive
 
 	public void StartAssign(KeyAssigner assigner)
 	{
