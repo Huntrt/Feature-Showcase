@@ -6,7 +6,7 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/General/Main Menu.unity
+    path: Assets/Features/_General/Main Menu.unity
     guid: e4507fee108cedb4cb5a4a752ed9157e
   - enabled: 1
     path: Assets/Features/Flexible Text Background/Flexible Text Background_Demo.unity
