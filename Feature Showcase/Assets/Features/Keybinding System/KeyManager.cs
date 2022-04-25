@@ -13,9 +13,7 @@ public class KeyManager : MonoBehaviour
 
 	/// Added key here... ///
 	public KeyCode Up, Down, Left, Right;
-
-	//! Try out if it cap sensitive
-
+	
 	public void StartAssign(KeyAssigner assigner)
 	{
 		//Get the action of the assigner given
