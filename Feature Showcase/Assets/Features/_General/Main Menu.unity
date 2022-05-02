@@ -1004,8 +1004,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   data:
     name: Randomize Room Generation
-    description: Generate alot of room by replicate itself randomly then placing
-      down wall and bridge.
+    description: 'Generate amount of room needed by replicating itself randomly.
+
+      It
+      will also build wall and bridges after generation completed.'
     sceneId: 3
     indicator: {fileID: 1781622468}
 --- !u!1 &369103680
@@ -4169,7 +4171,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Keybindings
+  m_text: Keybinding System
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 38c5ece000f7dfa48b443c4631fd348f, type: 2}
   m_sharedMaterial: {fileID: -1644124483952720655, guid: 38c5ece000f7dfa48b443c4631fd348f,
