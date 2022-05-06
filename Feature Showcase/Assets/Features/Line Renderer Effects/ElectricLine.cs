@@ -1,20 +1,22 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class ElectricLine : MonoBehaviour
 {
-	public GameObject test;
+	//% Debug variable
+	public GameObject test; List<GameObject> testeds = new List<GameObject>();
     public LineRenderer lineRenderer;
-	[Tooltip("The electric will refresh every second")]
+	[Tooltip("The effect will refresh every second")]
 	public float interval; float intervalCounter;
-	[Tooltip("The distance between each point")]
-	public Distance distance; [System.Serializable] public class Distance {public float min,max;}
-	[Tooltip("The chance for an point to added every distance")]
-	public float frequency;
-	[Tooltip("Does point auto align it distance or will randomly choose")]
-	[SerializeField] bool pointAlign;
-	[Tooltip("How far the point can move away from it origin")]
-	public float width;
+	[Tooltip("How far can the point move away from it initialize position")]
+	public Amplitude amplitude;
+	[Tooltip("How many percent can each point get of total line")]
+	public Spacing spacing = new Spacing();
 	public Vector2 target;
+
+	[System.Serializable] 
+	public class Spacing {[Range(0,100)] public float min; [Range(0.1f,100)]public float max = 0.1f;}
+	[System.Serializable] public class Amplitude {public float min; public float max;}
 
 	void Update()
 	{
@@ -28,9 +30,6 @@ public class ElectricLine : MonoBehaviour
 		// 	//Reset the interval counter
 		// 	intervalCounter -= intervalCounter;
 		// }
-
-		//% Manual refresh
-		if(Input.GetKeyDown(KeyCode.Space)) {Refresh();}
 	}
 
 	public void Refresh()
@@ -42,17 +41,21 @@ public class ElectricLine : MonoBehaviour
 		//Begin setting up in between point
 		SetupPoints(line);
 		//Add the line final position to be target position
-		line.positionCount++; line.SetPosition(line.positionCount-1, target);
+		line.SetPosition(line.positionCount-1, target);
 	}
 
 	void SetupPoints(LineRenderer line)
 	{
+		//% Clear all the debug object
+		for (int t = 0; t < testeds.Count; t++) {Destroy(testeds[t]);} testeds.Clear();
 		//Sert start position as this object position
 		Vector3 start = transform.position;
-		//Record the position for each point
-		Vector3 pointPos = start;
+		//Record the latest spacing position
+		Vector3 spaced = start;
 		//Get the euler angle from the start to target
 		float angle = Mathf.Atan2(target.y - start.y, target.x - start.x) * (180/Mathf.PI);
+		//Get direction of angle 
+		Vector3 direction = GetDirection(angle);
 		//Get the distance between this object and the target
 		float total = Vector2.Distance(transform.position, target);
 		//The amount of distance has occupied and it counter
@@ -62,17 +65,33 @@ public class ElectricLine : MonoBehaviour
 		{
 			//Increase line position count and counter
 			line.positionCount++; counter++;
-			//Getting random distance in mix max 
-			float dist = Random.Range(distance.min, distance.max);
-			//Get the direction that will use to find vector along it
-			Vector3 dir = start + Quaternion.AngleAxis(angle, Vector3.forward) * Vector3.right;
-			//Get the next point position by multiple direction with distance  
-			pointPos += dir * dist;
-			//Set counted line position at point 
-			line.SetPosition(counter, pointPos);
-			Instantiate(test, pointPos, Quaternion.identity);
+		//? Decide spacing
+			//Getting current distance by get randomize spacing percent of total distance
+			float distance = (Random.Range(spacing.min, spacing.max) / 100) * total;
+			//Get the next spacing position by multiple direction with distance  
+			spaced += direction * distance;
 			//Has occupied the amount of distance has get
-			occupied += dist;
+			occupied += distance;
+		//? Amplifying
+			//! Improve
+			float rot = 90; if(Random.Range(0,2) == 0) {rot = -90;}
+			//Get the direction for amplifying by rotating angle
+			Vector3 amp = GetDirection(angle + rot);
+			//Set point position as amplify direction multiply with amplitude amount 
+			Vector2 point = spaced + (amp * Random.Range(amplitude.min, amplitude.max));
+			// Vector2 point = spaced;
+			//Set counted line position at point
+			line.SetPosition(counter, point);
+			//% Debug object instantiate
+			if(occupied+distance < total) testeds.Add(Instantiate(test, point, Quaternion.identity));
 		}
+	}
+
+	Vector3 GetDirection(float angle)
+	{
+		//Convert angle to radians
+		float radians = angle * Mathf.Deg2Rad;
+		//Return the direction by apply cos, sin to radians
+		return new Vector3(Mathf.Cos(radians), Mathf.Sin(radians), 0);
 	}
 }

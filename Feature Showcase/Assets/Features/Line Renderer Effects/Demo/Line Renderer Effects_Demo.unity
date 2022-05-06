@@ -387,7 +387,7 @@ GameObject:
   m_Layer: 0
   m_Name: Electric Line Renderer
   m_TagString: Untagged
-  m_Icon: {fileID: 0}
+  m_Icon: {fileID: 4422084297763085224, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
@@ -485,7 +485,7 @@ LineRenderer:
     textureMode: 0
     shadowBias: 0.5
     generateLightingData: 0
-  m_UseWorldSpace: 0
+  m_UseWorldSpace: 1
   m_Loop: 0
 --- !u!4 &1681380662
 Transform:
@@ -494,13 +494,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1681380660}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalRotation: {x: 0, y: 0, z: 0.5446386, w: 0.83867085}
+  m_LocalPosition: {x: 1, y: 0.756, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 3
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 786}
 --- !u!114 &1681380663
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -516,13 +516,13 @@ MonoBehaviour:
   test: {fileID: 6976268831368513352, guid: 2a632c8c045254d44b229d559b8d328d, type: 3}
   lineRenderer: {fileID: 1681380661}
   interval: 0.1
-  distance:
-    min: 1
-    max: 1
-  frequency: 0
-  pointAlign: 0
-  width: 1
-  target: {x: 10, y: 0}
+  amplitude:
+    min: 0.1
+    max: 0.5
+  spacing:
+    min: 5
+    max: 20
+  target: {x: 0, y: 0}
 --- !u!114 &1681380664
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -536,6 +536,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   electricLine: {fileID: 1681380663}
+  auto: 1
 --- !u!1001 &1894687894
 PrefabInstance:
   m_ObjectHideFlags: 0
