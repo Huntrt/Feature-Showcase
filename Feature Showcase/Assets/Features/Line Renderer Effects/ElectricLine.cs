@@ -16,7 +16,7 @@ public class ElectricLine : MonoBehaviour
 
 	[System.Serializable] 
 	public class Spacing {[Range(0,100)] public float min; [Range(0.1f,100)]public float max = 0.1f;}
-	[System.Serializable] public class Amplitude {public float min; public float max;}
+	[System.Serializable] public class Amplitude {public bool inOrder; public float min; public float max;}
 
 	void Update()
 	{
@@ -34,7 +34,7 @@ public class ElectricLine : MonoBehaviour
 
 	public void Refresh()
 	{
-		//Save the line renderer then set it first position
+		//Save the line renderer then set reset is position count
 		LineRenderer line = lineRenderer; line.positionCount = 1;
 		//Set the line first position at this object position
 		line.SetPosition(0, transform.position);
@@ -48,18 +48,20 @@ public class ElectricLine : MonoBehaviour
 	{
 		//% Clear all the debug object
 		for (int t = 0; t < testeds.Count; t++) {Destroy(testeds[t]);} testeds.Clear();
-		//Sert start position as this object position
-		Vector3 start = transform.position;
+		//Set start position as this object position
+		Vector2 start = transform.position;
 		//Record the latest spacing position
-		Vector3 spaced = start;
+		Vector2 spaced = start;
 		//Get the euler angle from the start to target
 		float angle = Mathf.Atan2(target.y - start.y, target.x - start.x) * (180/Mathf.PI);
-		//Get direction of angle 
-		Vector3 direction = GetDirection(angle);
+		//Get direction of from start to target 
+		Vector2 direction = (target - start).normalized;
 		//Get the distance between this object and the target
 		float total = Vector2.Distance(transform.position, target);
 		//The amount of distance has occupied and it counter
 		float occupied = 0; int counter = 0;
+		//Randomly choose the starting side for amplifying if enable that mode
+		bool side = true; if(amplitude.inOrder && Random.Range(0,2) == 0) {side = false;}
 		//While haven't occupied the total distance
 		while (occupied <= total)
 		{
@@ -73,25 +75,31 @@ public class ElectricLine : MonoBehaviour
 			//Has occupied the amount of distance has get
 			occupied += distance;
 		//? Amplifying
-			//! Improve
-			float rot = 90; if(Random.Range(0,2) == 0) {rot = -90;}
-			//Get the direction for amplifying by rotating angle
-			Vector3 amp = GetDirection(angle + rot);
+			//Rotation that will rotate angle
+			float rot = 0;
+			//If amplitude not in order > //Radomly choosed if rotation will be 90 or -90
+			if(!amplitude.inOrder) {rot = 90; if(Random.Range(0,2) == 0) {rot = -90;}}
+			//If amplitude are in order > Cycle between 90 or -90 rotation
+			else {if(side) {rot = 90;} else {rot = -90;} side = !side;}
+			//Get the direction for amplifying by rotating current angle
+			Vector2 amp = AngleToDirection(angle + rot);
 			//Set point position as amplify direction multiply with amplitude amount 
 			Vector2 point = spaced + (amp * Random.Range(amplitude.min, amplitude.max));
-			// Vector2 point = spaced;
+
 			//Set counted line position at point
 			line.SetPosition(counter, point);
 			//% Debug object instantiate
-			if(occupied+distance < total) testeds.Add(Instantiate(test, point, Quaternion.identity));
+			testeds.Add(Instantiate(test, point, Quaternion.identity));
 		}
+		//% Destroy the last test object
+		Destroy(testeds[testeds.Count-1]);
 	}
 
-	Vector3 GetDirection(float angle)
+	Vector2 AngleToDirection(float angle)
 	{
 		//Convert angle to radians
 		float radians = angle * Mathf.Deg2Rad;
 		//Return the direction by apply cos, sin to radians
-		return new Vector3(Mathf.Cos(radians), Mathf.Sin(radians), 0);
+		return new Vector2(Mathf.Cos(radians), Mathf.Sin(radians));
 	}
 }
