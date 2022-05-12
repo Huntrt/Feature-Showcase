@@ -4,7 +4,6 @@ public class ElectricLine_Testing : MonoBehaviour
 {
     [SerializeField] ElectricLine electricLine;
 	[SerializeField] float speed;
-	[SerializeField] bool useOverwrite;
 	[SerializeField] Vector2[] overwrite;
 	Vector3 inputDirection;
 	Camera cam;

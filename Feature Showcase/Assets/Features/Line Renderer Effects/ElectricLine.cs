@@ -3,8 +3,6 @@ using UnityEngine;
 
 public class ElectricLine : MonoBehaviour
 {
-	//% Debug variable
-	public GameObject test; List<GameObject> testeds = new List<GameObject>();
     public LineRenderer lineRenderer;
 	[Tooltip("The effect will refresh every second")]
 	public float interval; float intervalCounter;
@@ -12,13 +10,19 @@ public class ElectricLine : MonoBehaviour
 	public Amplitude amplitude;
 	[Tooltip("How many percent can each point get of total line")]
 	public Spacing spacing = new Spacing();
-	public Vector2 target;
+	[HideInInspector] public Vector2 target;
 	int overwriteMode; // 0 = none | 1 = start -> target | 2 = start <- target
 	Vector2[] overwritePoints;
 	public event System.Action onDraw;
 
 	[System.Serializable] 
-	public class Spacing {[Range(0,100)] public float min; [Range(0.1f,100)]public float max = 0.1f;}
+	public class Spacing 
+	{
+		public enum Mode {percent, distance, adaptDistance,}
+		[Tooltip("percent: each point will spacing an percentage of total line\n\ndistance: point will distance each other no matter line length\n\nadaptDistance: point space like distance but able adapt in smaller line")]
+		public Mode mode;
+		[Range(0,100)] public float min; [Range(0.1f,100)]public float max = 0.1f;
+	}
 	[System.Serializable] public class Amplitude {public bool inOrder; public float min; public float max;}
 
 	//Draw upon enable
@@ -42,6 +46,8 @@ public class ElectricLine : MonoBehaviour
 	{
 		//Save the line renderer then set reset is position count
 		LineRenderer line = lineRenderer; line.positionCount = 1;
+		//Print an wanring if line renderer using world space
+		if(!line.useWorldSpace) {Debug.LogWarning("It recommend to disable line renderer 'useWorldSpace' ElectricLine.cs");}
 		//Set the line first position at this object position
 		line.SetPosition(0, transform.position);
 		//Begin setting up in between point
@@ -56,15 +62,13 @@ public class ElectricLine : MonoBehaviour
 
 	void SetupPoints(LineRenderer line)
 	{
-		//% Clear all the debug object
-		for (int t = 0; t < testeds.Count; t++) {Destroy(testeds[t]);} testeds.Clear();
 		//Set start position as this object position
 		Vector2 start = transform.position;
 		//Print an error and stop code if start has the same vector as target
-		if(start == target) {Debug.LogWarning("'start' and 'target' can't be the same vector in Electric Line.cs"); return;}
+		if(start == target) {Debug.LogWarning("'start' and 'target' can't be the same vector in ElectricLine.cs"); return;}
 		//Get the distance from start to target
 		float total = Vector2.Distance(start, target);
-		//Get the euler angle from start to target
+		//Get euler angle from of start to taget
 		float angle = Mathf.Atan2(target.y - start.y, target.x - start.x) * (180/Mathf.PI);
 		//Get direction from start to target 
 		Vector2 direction = (target - start).normalized;
@@ -75,8 +79,8 @@ public class ElectricLine : MonoBehaviour
 		{
 			//Create new line position and increase counter
 			line.positionCount++; counter++;
-			//Getting current distance by get randomize spacing percent of total distance
-			float distance = (Random.Range(spacing.min, spacing.max) / 100) * total;
+			//Getting current distance to use
+			float distance = Distancing(total);
 			//Get the next spacing position by multiple direction with distance  
 			spaced += direction * distance;
 			//Has occupied the amount of distance has get
@@ -85,11 +89,34 @@ public class ElectricLine : MonoBehaviour
 			Vector2 point = spaced + (Amplifying(angle) * Random.Range(amplitude.min, amplitude.max));
 			//Set counted line position at point
 			line.SetPosition(counter, point);
-			//% Debug object instantiate
-			testeds.Add(Instantiate(test, point, Quaternion.identity));
 		}
-		//% Destroy the last test object
-		Destroy(testeds[testeds.Count-1]);
+	}
+
+	float Distancing(float total)
+	{
+		//If spacing percent
+		if(spacing.mode == Spacing.Mode.percent)
+		{
+			//Return the value of randomize percented of total length
+			return (Random.Range(spacing.min, spacing.max) / 100) * total;
+		}
+		//If spacing distance
+		else if(spacing.mode == Spacing.Mode.distance)
+		{
+			//Return the randomize distance from min and max
+			return Random.Range(spacing.min, spacing.max);
+		}
+		//If spacing adapt with distance
+		else if(spacing.mode == Spacing.Mode.adaptDistance)
+		{
+			//Get the randomize distance from min and max
+			float dist = Random.Range(spacing.min, spacing.max);
+			//If getted ditance are smaller than total then aleast create 1 point
+			if(dist >= total) {dist = Random.Range(0, total);}
+			//Return distance has adapted
+			return dist;
+		}
+		return -1;
 	}
 
 	int side; Vector2 Amplifying(float angle)
