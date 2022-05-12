@@ -17,4 +17,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Features/Randomize Room Generation/Demo/Randomize Room Generation_Demo.unity
     guid: f7bea791b89bc104186a32e12b026601
+  - enabled: 1
+    path: Assets/Features/My Effects/Demo/Line Renderer Effects_Demo.unity
+    guid: cb647e4e52d5123489a2d24d36133aa1
   m_configObjects: {}
