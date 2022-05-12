@@ -3,8 +3,9 @@ using UnityEngine;
 public class ElectricLine_Testing : MonoBehaviour
 {
     [SerializeField] ElectricLine electricLine;
-	[SerializeField] bool auto;
 	[SerializeField] float speed;
+	[SerializeField] bool useOverwrite;
+	[SerializeField] Vector2[] overwrite;
 	Vector3 inputDirection;
 	Camera cam;
 
@@ -12,17 +13,20 @@ public class ElectricLine_Testing : MonoBehaviour
 	
     void Update()
     {
-        if(Input.GetMouseButtonDown(0) && !auto)
+        if(Input.GetMouseButtonDown(0))
 		{
-			electricLine.enabled = true;
+			electricLine.OverwriteFromTarget(overwrite);
 			electricLine.target = cam.ScreenToWorldPoint(Input.mousePosition);
-			electricLine.Refresh();
+			electricLine.enabled = true;
 		}
-        if(Input.GetMouseButton(0) && auto)
+        if(Input.GetMouseButton(0))
 		{
-			electricLine.enabled = true;
+			electricLine.OverwriteFromTarget(overwrite);
 			electricLine.target = cam.ScreenToWorldPoint(Input.mousePosition);
-			electricLine.Refresh();
+		}
+        if(Input.GetMouseButtonUp(0))
+		{
+			electricLine.enabled = false;
 		}
 		MoveInput();
     }

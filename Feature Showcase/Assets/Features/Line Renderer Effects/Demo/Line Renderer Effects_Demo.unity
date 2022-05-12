@@ -509,14 +509,14 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1681380660}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e01e0de7a80e3a9469a314744b3f7c4b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   test: {fileID: 6976268831368513352, guid: 2a632c8c045254d44b229d559b8d328d, type: 3}
   lineRenderer: {fileID: 1681380661}
-  interval: 0.1
+  interval: 0
   amplitude:
     inOrder: 1
     min: 0.1
@@ -538,8 +538,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   electricLine: {fileID: 1681380663}
-  auto: 1
   speed: 4
+  useOverwrite: 0
+  overwrite:
+  - {x: 0.2, y: 0.5}
+  - {x: 1, y: 4}
+  - {x: 8, y: 7}
 --- !u!212 &1681380665
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -579,7 +583,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 1
   m_Sprite: {fileID: 21300000, guid: ed61a8ac948ce4c4eaf9742c73ea0179, type: 3}
   m_Color: {r: 0.21226418, g: 0.5286481, b: 1, a: 1}
   m_FlipX: 0

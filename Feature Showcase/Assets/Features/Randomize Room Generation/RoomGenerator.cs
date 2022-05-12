@@ -415,7 +415,7 @@ public class RoomGenerator : MonoBehaviour
 				BuildWall(rooms[r], null, outPos, rot, r, d, length);
 			}
 		}
-		BuildWallRailing();
+		BuildBridgeRailing();
 	}
 
 	void BuildWallGate(int r, int d, Vector2 outPos, Vector2 roomPos, float rot, bool adjacent, float length)
@@ -449,7 +449,7 @@ public class RoomGenerator : MonoBehaviour
 		}
 	}
 
-	void BuildWallRailing()
+	void BuildBridgeRailing()
 	{
 		//Go through all the bridge
 		for (int b = 0; b < bridges.Count; b++)
