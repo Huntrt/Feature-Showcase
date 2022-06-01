@@ -601,7 +601,7 @@ PrefabInstance:
     - target: {fileID: 6488915462672944901, guid: 2ded5ccaa041253489a7c80ae9509a2f,
         type: 3}
       propertyPath: m_text
-      value: Line Renderer Effects
+      value: My Effects
       objectReference: {fileID: 0}
     - target: {fileID: 6488915462793673420, guid: 2ded5ccaa041253489a7c80ae9509a2f,
         type: 3}

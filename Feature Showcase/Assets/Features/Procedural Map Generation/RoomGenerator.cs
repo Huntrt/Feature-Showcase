@@ -1,3 +1,4 @@
+///This generation are know as Diffusion Limited Aggregation - DLA
 using System.Collections.Generic;
 using System.Collections;
 using UnityEngine;

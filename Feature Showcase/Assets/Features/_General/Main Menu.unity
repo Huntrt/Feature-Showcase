@@ -924,7 +924,7 @@ GameObject:
   - component: {fileID: 256454769}
   - component: {fileID: 256454771}
   m_Layer: 5
-  m_Name: Randomize Room Generation
+  m_Name: Procedural Map Generation
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1003,11 +1003,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   data:
-    name: Randomize Room Generation
-    description: 'Generate amount of room needed by replicating itself randomly.
-
-      It
-      will also build wall and bridges after generation completed.'
+    name: Procedural Map Generation
+    description: "Many algorithms for procedural map generation.\n\n<b>Digger:</b>\n-
+      Start from an point then replicate itself to \trandom direction on an grid
+      until meet the requirement."
     sceneId: 3
     indicator: {fileID: 1781622468}
 --- !u!1 &369103680
@@ -1667,7 +1666,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   data:
     name: My Effects
-    description: Showcasing some visual effect i has created.
+    description: 'Showcasing some visual effect i has created.
+
+
+      <b>Electric
+      Line:</b>
+
+      - Get random point between 2 line then move them randomly
+      verticaly.'
     sceneId: 4
     indicator: {fileID: 989135438}
 --- !u!114 &601707384
@@ -4723,7 +4729,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Randomize Room Generation
+  m_text: Procedural Map Generation
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 38c5ece000f7dfa48b443c4631fd348f, type: 2}
   m_sharedMaterial: {fileID: -1644124483952720655, guid: 38c5ece000f7dfa48b443c4631fd348f,
