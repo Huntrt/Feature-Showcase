@@ -458,7 +458,7 @@ MonoBehaviour:
   m_fontColor32:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+  m_fontColor: {r: 0.45, g: 1, b: 0.5866014, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -616,11 +616,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4405dbce859591c42aca9f0aed86aa13, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  data:
-    name: Keybinding System
-    description: An simple key binding system that use reflection.
-    sceneId: 2
-    indicator: {fileID: 1860254954}
+  description: An simple key binding system that use reflection.
+  sceneId: 2
+  indicator: {fileID: 1860254954}
 --- !u!1 &140898066
 GameObject:
   m_ObjectHideFlags: 0
@@ -1002,13 +1000,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4405dbce859591c42aca9f0aed86aa13, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  data:
-    name: Procedural Map Generation
-    description: "Many algorithms for procedural map generation.\n\n<b>Digger:</b>\n-
-      Start from an point then replicate itself to \trandom direction on an grid
-      until meet the requirement."
-    sceneId: 3
-    indicator: {fileID: 1781622468}
+  description: "Many algorithms for procedural map generation.\r\n\r\n<b>Digger:</b>\r\n-
+    Start from an point then replicate itself to \trandom direction on an grid until
+    meet the requirement.\r"
+  sceneId: 3
+  indicator: {fileID: 1781622468}
 --- !u!1 &369103680
 GameObject:
   m_ObjectHideFlags: 0
@@ -1235,11 +1231,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4405dbce859591c42aca9f0aed86aa13, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  data:
-    name: Flexible Text Background
-    description: An image that can auto fit base on the text it contain.
-    sceneId: 1
-    indicator: {fileID: 1997538606}
+  description: 'An image that can auto fit base on the text it contain.
+
+'
+  sceneId: 1
+  indicator: {fileID: 1997538606}
 --- !u!1 &414901252
 GameObject:
   m_ObjectHideFlags: 0
@@ -1664,18 +1660,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4405dbce859591c42aca9f0aed86aa13, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  data:
-    name: My Effects
-    description: 'Showcasing some visual effect i has created.
-
-
-      <b>Electric
-      Line:</b>
-
-      - Get random point between 2 line then move them randomly
-      verticaly.'
-    sceneId: 4
-    indicator: {fileID: 989135438}
+  description: "\rShowcasing some visual effect i has created.\r\n\r\n<b>Electric
+    Line:</b>\r\n- Get random point between 2 line then move them randomly verticaly."
+  sceneId: 4
+  indicator: {fileID: 989135438}
 --- !u!114 &601707384
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1946,11 +1934,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4405dbce859591c42aca9f0aed86aa13, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  data:
-    name: Null
-    description: Null
-    sceneId: 2
-    indicator: {fileID: 2146816370}
+  description: 
+  sceneId: 0
+  indicator: {fileID: 2146816370}
 --- !u!114 &641850686
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2174,11 +2160,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4405dbce859591c42aca9f0aed86aa13, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  data:
-    name: Null
-    description: Null
-    sceneId: 2
-    indicator: {fileID: 1831452343}
+  description: 
+  sceneId: 0
+  indicator: {fileID: 1831452343}
 --- !u!114 &647188441
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2516,11 +2500,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4405dbce859591c42aca9f0aed86aa13, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  data:
-    name: Null
-    description: Null
-    sceneId: 2
-    indicator: {fileID: 248019411}
+  description: 
+  sceneId: 0
+  indicator: {fileID: 248019411}
 --- !u!114 &764619838
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2822,11 +2804,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4405dbce859591c42aca9f0aed86aa13, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  data:
-    name: Null
-    description: Null
-    sceneId: 2
-    indicator: {fileID: 1061078660}
+  description: 
+  sceneId: 0
+  indicator: {fileID: 1061078660}
 --- !u!114 &992605010
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3125,11 +3105,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4405dbce859591c42aca9f0aed86aa13, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  data:
-    name: Null
-    description: Null
-    sceneId: 2
-    indicator: {fileID: 1614249597}
+  description: 
+  sceneId: 0
+  indicator: {fileID: 1614249597}
 --- !u!114 &1069450443
 MonoBehaviour:
   m_ObjectHideFlags: 0

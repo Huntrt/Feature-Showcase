@@ -6,20 +6,18 @@ public class FeatureDataDisplay : MonoBehaviour
 {
 	[SerializeField] GameObject displayPanel;
 	[SerializeField] TextMeshProUGUI featureNameDisplay, featureDescriptionDisplay;
-	FeatureData.Data current; bool hasDisplay;
+	FeatureData current; bool hasDisplay;
 	//Turn this class into singleton
     public static FeatureDataDisplay i; void Awake() {i = this;}
 
-	public void DisplayData(FeatureData.Data data)
+	public void DisplayData(FeatureData data)
 	{
 		//Deactive the old indicator if has display
 		if(hasDisplay) {current.indicator.SetActive(false);}
-		//Has display
-		hasDisplay = true;
-		//Save the given data as current data
-		current = data;
-		//Display the name of current data
-		featureNameDisplay.text = current.name;
+		//Has display then save the given data as current data
+		hasDisplay = true; current = data;
+		//Display the name of current data as data's gameobject name
+		featureNameDisplay.text = current.gameObject.name;
 		//Display the description of current data
 		featureDescriptionDisplay.text = current.description;
 		//Active the current indicator
