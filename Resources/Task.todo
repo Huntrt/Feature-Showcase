@@ -1,22 +1,22 @@
 ✓ Flexible Text Background
 	Note - Pretty basic it more like an trick
-▪ Randomize Room Generator @doing
-	✓ Generating
-		✓ Replicate
-		✓ Escape
-	▪ Bridge @doing
-		✓ Position
-		▪ Rotation
-	▪ Wall @next
-	▪ In-Game setting
-▪ Keybinder @next
+✓ Keybinder
 	✓ Reflection
-	▪ Arrays
-▪ Pixel Perfect Gameview
+	X Arrays
+▪ Procedural Map Generation 
+	▪ Digger 
+	▪ Placer
+	▪ Binary Space Partitioning - BSP
+	▪ Cellular Automata - CA
+	▪ Wave Function Collapse - WFC
+▪ My Effects
+	✓ Electric Line
+	▪ Thunder Line
+	▪ Wavelength Line
 ▪ A* Pathfindidng
-▪ Cellular Automata
+▪ Pixel Perfect Gameview
 ▪ Inverse Kinematic 
 
 More:
 	▪ Host on github page
-	▪ Add title bar above feature demo
+	✓ Add title bar above feature demo
