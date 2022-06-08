@@ -1,0 +1,19 @@
+# Digger:
+	Process:
+		+ Set Plot:
+			> The "plot" that handle digging an new "plot" will know as "digger".
+			> The "digger" will decide an random direction to dig an new "plot".
+			> The newly dig "plot" will be know as the new "digger"...
+			> If during dig the following condition meet:
+				- All 4 direction of "digger" are digged. 
+				- Still need more "plot".
+				> Choose an random direction and go until no longer on digged "plot".
+				> Set "digger" from there...
+		+ Decide Neighbor:
+			> An "plot" has list of 4 neighbor for each direction.
+			> Each neighbor will has digByThis and hasDig:
+				digByThis = This neighbor has been dig by this "plot".
+				hasDig = This neighbor has been dig.
+			> When an "digger" digged an new "plot" it will mark that newly dig as "digByThis" in it neighbor.
+			> Go through all the "plot" to check 4 direction of that "plot".
+			> If there is digged "plot" then mark it as "hasDig" in neighbor.
