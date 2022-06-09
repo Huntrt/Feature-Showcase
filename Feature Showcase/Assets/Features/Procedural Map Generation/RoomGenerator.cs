@@ -73,7 +73,7 @@ public class RoomGenerator : MonoBehaviour
 			public GameObject floor, bridge;
 			public SpriteRenderer floorRender, bridgeRender;
 			public bool[] hasBridge = new bool[4];
-		} 
+		}
 	}
 	[Serializable] public class BridgeData
 	{

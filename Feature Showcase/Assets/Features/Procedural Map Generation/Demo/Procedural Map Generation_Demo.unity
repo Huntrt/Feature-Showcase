@@ -123,6 +123,101 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &10730500
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 10730502}
+  - component: {fileID: 10730501}
+  m_Layer: 0
+  m_Name: Digger Generator
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &10730501
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 10730500}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7cb0e625512b0df4cbb42051eddac8c7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  autoGenerate: 0
+  autoDelay: 0
+  amount: 20
+  startPosition: {x: 0, y: 0}
+  digChance: 0
+  directionalChance:
+    use: 0
+    up: 0
+    down: 0
+    left: 0
+    right: 0
+  digRequirement:
+    maximum: 1
+    minimum: 0
+  builder:
+    masterScale: 1
+    autoScale: 1
+    draft:
+      Prefab: {fileID: 0}
+      Spacing: 0
+      Size: 0
+      digged: {r: 0, g: 0, b: 0, a: 0}
+      miner: {r: 0, g: 0, b: 0, a: 0}
+      stuck: {r: 0, g: 0, b: 0, a: 0}
+      over: {r: 0, g: 0, b: 0, a: 0}
+    floor:
+      Prefab: {fileID: 0}
+      Spacing: 0
+      Size: 0
+      Color: {r: 0, g: 0, b: 0, a: 0}
+    bridge:
+      Prefab: {fileID: 0}
+      Width: 0
+      Length: 0
+      Color: {r: 0, g: 0, b: 0, a: 0}
+    wall:
+      Prefab: {fileID: 0}
+      Thick: 0
+      Length: 0
+      Color: {r: 0, g: 0, b: 0, a: 0}
+  plots: []
+  miners: []
+  drafts: []
+  floors: []
+  bridges: []
+  hasGenerated: 0
+  areGenerating: 0
+  arraysTest:
+  - 
+  - 
+  - 
+  - 
+--- !u!4 &10730502
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 10730500}
+  m_LocalRotation: {x: 0, y: -0, z: 0.7071068, w: -0.7071068}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 1
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 270}
 --- !u!1 &277542051
 GameObject:
   m_ObjectHideFlags: 0
@@ -591,7 +686,7 @@ RectTransform:
   - {fileID: 922208916}
   - {fileID: 343589201}
   m_Father: {fileID: 0}
-  m_RootOrder: 2
+  m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
@@ -739,7 +834,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 3
+  m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1404621521
 GameObject:
@@ -832,7 +927,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1441528817
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -902,5 +997,5 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 1
+  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 270}
