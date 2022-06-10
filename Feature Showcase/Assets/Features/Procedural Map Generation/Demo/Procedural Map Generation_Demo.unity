@@ -154,9 +154,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   autoGenerate: 0
   autoDelay: 0
-  amount: 20
+  amount: 100
   startPosition: {x: 0, y: 0}
-  digChance: 0
+  digChance: 50
   directionalChance:
     use: 0
     up: 0
@@ -167,27 +167,31 @@ MonoBehaviour:
     maximum: 1
     minimum: 0
   builder:
-    masterScale: 1
+    spacing: 0.3
+    masterScale: 0.2
     autoScale: 1
     draft:
-      Prefab: {fileID: 0}
-      Spacing: 0
-      Size: 0
-      digged: {r: 0, g: 0, b: 0, a: 0}
-      miner: {r: 0, g: 0, b: 0, a: 0}
-      stuck: {r: 0, g: 0, b: 0, a: 0}
-      over: {r: 0, g: 0, b: 0, a: 0}
+      grouper: {fileID: 0}
+      Prefab: {fileID: 4558046587480059573, guid: ca4eee04cfe5b634a999274ded4b3a65,
+        type: 3}
+      Size: 1
+      digged: {r: 1, g: 1, b: 1, a: 1}
+      miner: {r: 1, g: 1, b: 1, a: 1}
+      stuck: {r: 1, g: 1, b: 1, a: 1}
+      over: {r: 1, g: 1, b: 1, a: 1}
     floor:
+      grouper: {fileID: 0}
       Prefab: {fileID: 0}
-      Spacing: 0
       Size: 0
       Color: {r: 0, g: 0, b: 0, a: 0}
     bridge:
+      grouper: {fileID: 0}
       Prefab: {fileID: 0}
       Width: 0
       Length: 0
       Color: {r: 0, g: 0, b: 0, a: 0}
     wall:
+      grouper: {fileID: 0}
       Prefab: {fileID: 0}
       Thick: 0
       Length: 0
@@ -199,11 +203,6 @@ MonoBehaviour:
   bridges: []
   hasGenerated: 0
   areGenerating: 0
-  arraysTest:
-  - 
-  - 
-  - 
-  - 
 --- !u!4 &10730502
 Transform:
   m_ObjectHideFlags: 0
@@ -211,13 +210,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 10730500}
-  m_LocalRotation: {x: 0, y: -0, z: 0.7071068, w: -0.7071068}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 1
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 270}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &277542051
 GameObject:
   m_ObjectHideFlags: 0
@@ -317,7 +316,7 @@ MonoBehaviour:
   cam: {fileID: 277542053}
   moveSpeed: 7
   zoom:
-    speed: 20
+    speed: 0
     reset: 5
     max: 100
     min: 0.001
