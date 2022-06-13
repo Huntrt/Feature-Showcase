@@ -25,7 +25,7 @@ public class DiggerGeneration : MonoBehaviour
 	public List<DraftData> drafts = new List<DraftData>();
 	public List<FloorData> floors = new List<FloorData>();
 	public List<BridgeData> bridges = new List<BridgeData>();
-	public bool hasGenerated, areGenerating; 
+	public bool generating; 
 	public event Action generationCompleted, structureBuilded;
 	
 #region Classes
@@ -43,43 +43,43 @@ public class DiggerGeneration : MonoBehaviour
 	}
 	[Serializable] public class Builder
 	{
-		public float spacing;
+		public float spacing; 
 		[Tooltip("All structure size will multiply with this scale")] 
 		public float masterScale;
-		[Tooltip("Bridge and Wall length will auto scale with spacing and floor size \n (Length value will now use to modfy it)")]
+		[Tooltip("The following will be change:\n- Spacing will take into account of floor size\n- Bridge length will be scale with spacing\n- Wall will be scale wih bridge and wall size\n- Value that got auto scale will now use to modify")]
 		public bool autoScale;
 		public Draft draft; [Serializable] public class Draft
 		{
 			public GameObject grouper;
-			public GameObject Prefab;
-			public float Size;
+			public GameObject prefab;
+			public float size;
 			public Color digged, miner, stuck, over;
 		}
 		public Floor floor; [Serializable] public class Floor
 		{
 			public GameObject grouper;
-			public GameObject Prefab;
-			public float Size;
-			public Color Color;
+			public GameObject prefab;
+			public float size;
+			public Color color;
 		}
 		public Bridge bridge; [Serializable] public class Bridge
 		{
 			public GameObject grouper;
-			public GameObject Prefab;
-			public float Width, Length;
-			public Color Color;
+			public GameObject prefab;
+			public float width, length;
+			public Color color;
 		}
 		public Wall wall; [Serializable] public class Wall
 		{
 			public GameObject grouper;
-			public GameObject Prefab;
-			public float Thick, Length;
-			public Color Color;
+			public GameObject prefab;
+			public float thick, length;
+			public Color color;
 		}
 	}
 	[Serializable] public class PlotData
 	{
-		public int index;
+		public int index, digCount;
 		public Vector2 coordinate, position;
 		public NeighborData[] neighbors = new NeighborData[4];
 	}
@@ -112,18 +112,18 @@ public class DiggerGeneration : MonoBehaviour
 #endregion
 
 	//Begin dig when pressed space
-	void Update() {if(Input.GetKeyDown(KeyCode.Space)) Dig();}
+	void Update() {if(Input.GetKey(KeyCode.Space)) Dig();}
 
-	public void Dig()
+	public void Dig(bool overwrite = false)
 	{
-		//Begin renew structure to dig
+		//Don't dig if currently generating when no need to overwriten
+		if(generating) {if(!overwrite) {return;}}
+		//Renewing structure to dig
 		RenewStructure();
 		//Clear all the plots
 		plots.Clear();
-		//Only dig when not generate
-		if(areGenerating) {return;}
-		//Are now generating and haven't generated
-		areGenerating = true; hasGenerated = false;
+		//Are now generating
+		generating = true;
 		//Create an plot at 0,0 then set it position at start position
 		CreatePlot(new Vector2(0,0), startPosition);
 		//Begin digging at the first plot
@@ -147,45 +147,70 @@ public class DiggerGeneration : MonoBehaviour
 		{
 			//Randomly get the available direction gonna use
 			int use = UnityEngine.Random.Range(0, aDir.Count);
-			//Dig at that available direction with it result
-			DigAtDirection(miner, aDir[use], result[use]);
+			//Try to dig at that available direction with it result
+			TryToDig(miner, aDir[use], result[use]);
 			//This used direction are no longer available
 			aDir.RemoveAt(use);
 		}
-		//Remove this miner after finish dig
+		//Remove this miner after try to dig
 		miners.Remove(miner);
+		//Begin check the digging process if haven't dig enough plot
+		if(plots.Count < amount) {CheckingDigProcess(miner);}
 		//Dig are complete when there no miner left
 		if(miners.Count <= 0) {CompleteDig();}
 	}
 
-	void DigAtDirection(PlotData miner, int dir, bool allow)
+	void TryToDig(PlotData miner, int dir, bool allow)
 	{
 		//Don't dig if has reach max plot amount or not allow
 		if(plots.Count >= amount || !allow) return;
 		//Get the vector of this current direction
-		Vector2 dirVector = IndexToDirection(dir);
+		Vector2 dirVector = DirectionIndexToVector(dir);
 		//Get the coordinate in this direction
 		Vector2 dirCoord = miner.coordinate + dirVector;
 		//Find the next plot at direction coordinate
 		PlotData nextPlot = FindPlotAtCoordinate(dirCoord);
-		//If there is next plot
-		if(nextPlot != null)
+		//If there is already next plot or has reached maximum dig amount
+		if(nextPlot != null || miner.digCount >= digRequirement.maximum)
 		{
 			//Don't dig
 			return;
 		}
+
+		//? Dig the new plot
 		//Create an new digging plot
-		PlotData dig = new PlotData();
+		PlotData newDig = new PlotData();
 		//The dig index are current room count
-		dig.index = plots.Count;
+		newDig.index = plots.Count;
 		//Set dig coordinate at direction coordinates
-		dig.coordinate = dirCoord;
-		//Set dig position at miner position increase with itself at direction
-		dig.position = dig.coordinate * builder.spacing;
+		newDig.coordinate = dirCoord;
+		//Save the spacing and increase the spacing with floor size if using auto scale
+		float spaced = builder.spacing; if(builder.autoScale) {spaced += MasterScaling("floor");}
+		//Set dig position at miner position increase with vector direction that multiply with spaced
+		newDig.position = miner.position + (dirVector * spaced);
 		//Add the digged plot to list
-		plots.Add(dig);
-		//Begin dig again at this plot
-		StartCoroutine(Digging(dig, miner));
+		plots.Add(newDig);
+		//Counting this dig of miner
+		miner.digCount++;
+		//Begin dig again at newly digged plot
+		StartCoroutine(Digging(newDig, miner));
+	}
+
+	void CheckingDigProcess(PlotData miner)
+	{
+		//Has this miner retry
+		bool retry = true;
+		//If there no miner left or this miner haven't dig the bare minimum 
+		if(miners.Count == 0 || miner.digCount < digRequirement.minimum)
+		{
+			//Retry again at the miner
+			StartCoroutine(Digging(miner, miner)); retry = true;
+		}
+		//If there still miner left while this miner haven't dig anything and is not retry
+		if(!retry && miner.digCount == 0)
+		{
+			//% Do something when miner are not needed
+		}
 	}
 
 	bool[] DirectionResult(int forceDirection = -1)
@@ -230,14 +255,14 @@ public class DiggerGeneration : MonoBehaviour
 
 	void CompleteDig()
 	{
-		//Has generated and no longer generating
-		hasGenerated = true; areGenerating = false;
+		//No longer generating
+		generating = false;
 		//Call complete generation event
 		generationCompleted?.Invoke();
 	}
 	
 #region Converter
-	Vector2 IndexToDirection(int index)
+	Vector2 DirectionIndexToVector(int index)
 	{
 		//@ Return vector depend on index given from 0-3
 		if(index == 0) {return Vector2.up;}
@@ -246,6 +271,22 @@ public class DiggerGeneration : MonoBehaviour
 		if(index == 3) {return Vector2.right;}
 		//Return zero vector if index given are not 0-3
 		return Vector2.zero;
+	}
+
+	float MasterScaling(string structure)
+	{
+		//Save the master scale
+		float ms = builder.masterScale;
+		//@ Return the master scaled value of needed structure scaling
+		switch(structure)
+		{
+			case "draft" : return builder.draft.size   * ms; break;
+			case "floor" : return builder.floor.size   * ms; break;
+			case "bridge": return builder.bridge.width * ms; break;
+			case "wall"  : return builder.wall.thick   * ms; break;
+		}
+		//Send an error if there no structure that needed
+		Debug.LogError("There no '"+structure+"' structure"); return -1;
 	}
 #endregion
 
@@ -295,11 +336,11 @@ public class DiggerGeneration : MonoBehaviour
 		//Save the miner index to draft's plot index
 		newDraft.plotIndex = miner.index;
 		//Instantiate an draft prefab at miner position then save it to data
-		newDraft.obj = Instantiate(builder.draft.Prefab, miner.position, Quaternion.identity);
+		newDraft.obj = Instantiate(builder.draft.prefab, miner.position, Quaternion.identity);
 		//Save the new draft object's sprite renderer to data
 		newDraft.renderer = newDraft.obj.GetComponent<SpriteRenderer>();
-		//Multiply draft local scale with master scale
-		newDraft.obj.transform.localScale *= builder.masterScale;
+		//Set the draft object scale as the master scaled of the draft scale
+		newDraft.obj.transform.localScale = new Vector2(MasterScaling("draft"), MasterScaling("draft"));
 		//Group the draft parent
 		newDraft.obj.transform.SetParent(builder.draft.grouper.transform);
 		//Add new draft data to list

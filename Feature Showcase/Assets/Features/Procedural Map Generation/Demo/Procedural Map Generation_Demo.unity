@@ -136,7 +136,7 @@ GameObject:
   m_Layer: 0
   m_Name: Digger Generator
   m_TagString: Untagged
-  m_Icon: {fileID: 0}
+  m_Icon: {fileID: 2488908585195742037, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
@@ -167,35 +167,35 @@ MonoBehaviour:
     maximum: 1
     minimum: 0
   builder:
-    spacing: 0.3
+    spacing: 0.1
     masterScale: 0.2
     autoScale: 1
     draft:
       grouper: {fileID: 0}
-      Prefab: {fileID: 4558046587480059573, guid: ca4eee04cfe5b634a999274ded4b3a65,
+      prefab: {fileID: 4558046587480059573, guid: ca4eee04cfe5b634a999274ded4b3a65,
         type: 3}
-      Size: 1
+      size: 1
       digged: {r: 1, g: 1, b: 1, a: 1}
-      miner: {r: 1, g: 1, b: 1, a: 1}
-      stuck: {r: 1, g: 1, b: 1, a: 1}
-      over: {r: 1, g: 1, b: 1, a: 1}
+      miner: {r: 0.39999998, g: 1, b: 0.6000001, a: 1}
+      stuck: {r: 1, g: 0.39999998, b: 0.39999998, a: 1}
+      over: {r: 1, g: 0.75, b: 0.39999998, a: 1}
     floor:
       grouper: {fileID: 0}
-      Prefab: {fileID: 0}
-      Size: 0
-      Color: {r: 0, g: 0, b: 0, a: 0}
+      prefab: {fileID: 0}
+      size: 1
+      color: {r: 0, g: 0, b: 0, a: 0}
     bridge:
       grouper: {fileID: 0}
-      Prefab: {fileID: 0}
-      Width: 0
-      Length: 0
-      Color: {r: 0, g: 0, b: 0, a: 0}
+      prefab: {fileID: 0}
+      width: 0
+      length: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     wall:
       grouper: {fileID: 0}
-      Prefab: {fileID: 0}
-      Thick: 0
-      Length: 0
-      Color: {r: 0, g: 0, b: 0, a: 0}
+      prefab: {fileID: 0}
+      thick: 0
+      length: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
   plots: []
   miners: []
   drafts: []
