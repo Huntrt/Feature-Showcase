@@ -167,42 +167,42 @@ MonoBehaviour:
     maximum: 1
     minimum: 0
   builder:
-    spacing: 0.1
-    masterScale: 0.2
+    spacing: 0.05
+    masterScale: 0.1
     autoScale: 1
     draft:
-      grouper: {fileID: 0}
       prefab: {fileID: 4558046587480059573, guid: ca4eee04cfe5b634a999274ded4b3a65,
         type: 3}
       size: 1
-      digged: {r: 1, g: 1, b: 1, a: 1}
-      miner: {r: 0.39999998, g: 1, b: 0.6000001, a: 1}
+      digged: {r: 0.05, g: 0.05, b: 0.05, a: 1}
+      miner: {r: 0.3, g: 1, b: 0.41666657, a: 1}
       stuck: {r: 1, g: 0.39999998, b: 0.39999998, a: 1}
-      over: {r: 1, g: 0.75, b: 0.39999998, a: 1}
-    floor:
+      bypassed: {r: 0.4, g: 0.2, b: 0.2, a: 1}
+      over: {r: 0.14901961, g: 0.29803923, b: 0.1738562, a: 1}
       grouper: {fileID: 0}
+    floor:
       prefab: {fileID: 0}
       size: 1
       color: {r: 0, g: 0, b: 0, a: 0}
-    bridge:
       grouper: {fileID: 0}
+    bridge:
       prefab: {fileID: 0}
       width: 0
       length: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    wall:
       grouper: {fileID: 0}
+    wall:
       prefab: {fileID: 0}
       thick: 0
       length: 0
       color: {r: 0, g: 0, b: 0, a: 0}
+      grouper: {fileID: 0}
   plots: []
   miners: []
   drafts: []
   floors: []
   bridges: []
-  hasGenerated: 0
-  areGenerating: 0
+  generating: 0
 --- !u!4 &10730502
 Transform:
   m_ObjectHideFlags: 0
@@ -254,7 +254,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.064615384, g: 0.064615384, b: 0.07, a: 0}
+  m_BackGroundColor: {r: 0.12, g: 0.12, b: 0.12, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -744,7 +744,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0, b: 0, a: 0.7490196}
+  m_Color: {r: 0, g: 0, b: 0, a: 0.5019608}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -885,7 +885,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.9, g: 0.9, b: 0.9, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -947,20 +947,17 @@ MonoBehaviour:
       endColor: {r: 1, g: 0.65, b: 0.39999998, a: 1}
     floorColor: {r: 0.95, g: 0.95, b: 0.95, a: 1}
     floorPrefabs:
-    - {fileID: 4558046587480059573, guid: 8b54a26b9a8e8eb47bcbb1f5112ba983, type: 3}
-    - {fileID: 4558046587480059573, guid: 2884626c8e7752640b06633609f0b182, type: 3}
-    - {fileID: 4558046587480059573, guid: 52062013806b7ed4a9bcbe41847df4ae, type: 3}
-    - {fileID: 4558046587480059573, guid: c3ab154a4f8a20645a1bd499a0d57af0, type: 3}
+    - {fileID: 4558046587480059573, guid: ca4eee04cfe5b634a999274ded4b3a65, type: 3}
     floorScale: {x: 1, y: 1}
     floorSpacing: 0.3
     bridgeColor: {r: 0.95, g: 0.95, b: 0.95, a: 1}
-    bridgePrefab: {fileID: 369311246715796509, guid: a8cbcfcfe80c63c41a47c25cb98db4f9,
+    bridgePrefab: {fileID: 4558046587480059573, guid: ca4eee04cfe5b634a999274ded4b3a65,
       type: 3}
     bridgeWidth: 0.4
     bridgeLength: 0.3
     neighbourMode: 1
     wallColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-    wallPrefab: {fileID: 1901219987388566909, guid: 4ae109bd84781594080b6041ba7dd62e,
+    wallPrefab: {fileID: 4558046587480059573, guid: ca4eee04cfe5b634a999274ded4b3a65,
       type: 3}
     wallThick: 0.05
     wallLengthModify: 0
