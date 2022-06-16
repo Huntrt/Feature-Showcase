@@ -178,7 +178,7 @@ MonoBehaviour:
       miner: {r: 0.3, g: 1, b: 0.41666657, a: 1}
       stuck: {r: 1, g: 0.39999998, b: 0.39999998, a: 1}
       bypassed: {r: 0.4, g: 0.2, b: 0.2, a: 1}
-      over: {r: 0.14901961, g: 0.29803923, b: 0.1738562, a: 1}
+      over: {r: 0.060392167, g: 0.2, b: 0.083137274, a: 1}
       grouper: {fileID: 0}
     floor:
       prefab: {fileID: 0}

@@ -84,6 +84,7 @@ public class DiggerGeneration : MonoBehaviour
 		public Vector2 coordinate, position;
 		public List<int> availableDirection = new List<int>{0,1,2,3};
 		public NeighborData[] neighbors = new NeighborData[4];
+		[HideInInspector] public int bypassDirection = -1;
 	}
 	[Serializable] public class NeighborData
 	{
@@ -149,23 +150,16 @@ public class DiggerGeneration : MonoBehaviour
 		DecideDirectionToDig(miner);
 		//Remove this miner after try to dig
 		miners.Remove(miner);
-		//Begin check the digging process if haven't dig enough plot
-		if(plots.Count < amount) {CheckingDigProcess(miner);}
+		//Begin check the digging progress if haven't dig enough plot
+		if(plots.Count < amount) {CheckingDigProgress(miner);}
 		//Dig are complete when there no miner left
 		if(miners.Count <= 0) {CompleteDig();}
 	}
 
 	void TryToDig(PlotData miner, int dir, bool allow)
 	{
-		//? Checking and prepare the digging direction
-		//Get the vector of this current direction
-		Vector2 dirVector = DirectionIndexToVector(dir);
-		//Get the next coordinate at miner coord increase with direction vector
-		Vector2 nextCoord = miner.coordinate + dirVector;
-		//Find the next plot at direction coordinate
-		PlotData nextPlot = FindPlotAtCoordinate(nextCoord);
-		//If this direction haven't got empty neighbor then create one
-		if(miner.neighbors[dir] == null) miner.neighbors[dir] = new NeighborData();
+		//? Get the next plot of miner at given direction
+		GetNextPlot(miner, dir, out Vector2 dirVector, out Vector2 nextCoord, out PlotData nextPlot);
 
 		//? Are able to dig in this direction
 		//STOP dig and this direction are no longer available when next plot have exist
@@ -182,9 +176,10 @@ public class DiggerGeneration : MonoBehaviour
 	void DecideDirectionToDig(PlotData miner)
 	{
 		//Set the result of each direction
-		bool[] result = DirectionResult();
+		bool[] result = RandomizingDirectionResult();
 		//Create an temporary the list of available direction
 		List<int> aDir = new List<int>(miner.availableDirection);
+		/// DIG
 		//Go through all 4 direction when there still available direction
 		if(miner.availableDirection.Count > 0) for (int d = 0; d < 4; d++)
 		{
@@ -197,51 +192,49 @@ public class DiggerGeneration : MonoBehaviour
 			//Remove this direction from temporary
 			aDir.Remove(use);
 		}
+		/// BYPASS
 		//If there are no available direction and this is the only miner
 		else if(miners.Count <= 1)
 		{
-			//Will continuous run until has direction to bypass
-			int bypassDirection = -1; while (bypassDirection == -1)
+			//Will continuous run until miner has direction to bypass
+			while (miner.bypassDirection == -1)
 			{
 				//Refresh direction result for bypass
-				result = DirectionResult();
+				result = RandomizingDirectionResult();
 				//Randomly get an choose an direction index
 				int choosed = UnityEngine.Random.Range(0,4);
-				//If the result in choosed direction are true then bypass in that direction
-				if(result[choosed] == true) bypassDirection = choosed;
+				//If the result in choosed direction are true then miner bypass in that direction
+				if(result[choosed] == true) miner.bypassDirection = choosed;
 			}
 			//Change the draft color at miner index to stuck
 			ChangeDraftColor(miner.index, Builder.Draft.Colors.stuck);
 			//Try to bypass at miner in bypass direction has get
-			TryToBypass(miner, bypassDirection);
+			TryToBypass(miner, miner.bypassDirection);
 		}
 	}
 
 	void TryToBypass(PlotData bypasser, int direction)
 	{
-		//Get the vector of given direction
-		Vector2 dirVector = DirectionIndexToVector(direction);
-		//Get the next coordinate at bypasser coord increase with direction vector
-		Vector2 nextCoord = bypasser.coordinate + dirVector;
-		//Get the plot data to attempt at coordinate from bypasser increase with vector direction
-		PlotData attempt = FindPlotAtCoordinate(bypasser.coordinate + dirVector);
+		//Get the next plot of bypasser in given direction to attempt that plot
+		GetNextPlot(bypasser, direction, out Vector2 dirVector, out Vector2 nextCoord, out PlotData attempt);
 		//If there still plot at the attempt
 		if(attempt != null) 
 		{
-			//Change the draft color at attempt index to bypassed
-			ChangeDraftColor(attempt.index, Builder.Draft.Colors.bypassed);
 			//Try to bypass that attempt in the same direction
 			TryToBypass(attempt, direction);
+			//Change the draft color at attempt index to bypassed
+			ChangeDraftColor(attempt.index, Builder.Draft.Colors.bypassed);
+			print(attempt.index);
 		}
 		//If there no longer plot at attempt
 		else
 		{
-			//Dig an new plot for bypasser at direction in direction vector with next corrdinate
+			//Dig an new plot at the same direction in direction vector with next corrdinate
 			DigPlot(bypasser, direction, dirVector, nextCoord);
 		}
 	}
 
-	bool[] DirectionResult()
+	bool[] RandomizingDirectionResult()
 	{
 		//The result for each direction
 		bool[] result = new bool[4];
@@ -269,7 +262,17 @@ public class DiggerGeneration : MonoBehaviour
 		return result;
 	}
 
-	void CheckingDigProcess(PlotData miner)
+	void GetNextPlot(PlotData plot,int dir,out Vector2 dirVector,out Vector2 nextCoord,out PlotData nextPlot)
+	{
+		//Get the vector of this current direction
+		dirVector = DirectionIndexToVector(dir);
+		//Get the next coordinate at given plot coord coordinate increase with direction vector
+		nextCoord = plot.coordinate + dirVector;
+		//Find the next plot at next coordinate
+		nextPlot = FindPlotAtCoordinate(nextCoord);
+	}
+
+	void CheckingDigProgress(PlotData miner)
 	{
 		//Has this miner retry
 		bool retry = false;
@@ -279,8 +282,8 @@ public class DiggerGeneration : MonoBehaviour
 			//Retry again at this miner
 			StartCoroutine(Digging(miner, miner)); retry = true;
 		}
-		//If this miner haven't dig anything and is not retrying
-		if(!retry && miner.digCount == 0)
+		//If this miner are not bypasser, haven't dig anything and is not retrying
+		if(!retry && miner.digCount == 0 && miner.bypassDirection == -1)
 		{
 			//Change the draft color at miner index to over
 			ChangeDraftColor(miner.index, Builder.Draft.Colors.over);
@@ -295,6 +298,8 @@ public class DiggerGeneration : MonoBehaviour
 
 	void DigPlot(PlotData miner, int dir, Vector2 dirVector, Vector2 nextCoord)
 	{
+		//If this direction haven't got empty neighbor then create one
+		if(miner.neighbors[dir] == null) miner.neighbors[dir] = new NeighborData();
 		//Save the spacing and increase the spacing with floor size if using auto scale
 		float spaced = builder.spacing; if(builder.autoScale) {spaced += MasterScaling("floor");}
 		//Get the next position by increase miner position with direction got multiply with spaced
