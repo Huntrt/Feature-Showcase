@@ -156,23 +156,6 @@ public class DiggerGeneration : MonoBehaviour
 		if(miners.Count <= 0) {CompleteDig();}
 	}
 
-	void TryToDig(PlotData miner, int dir, bool allow)
-	{
-		//? Get the next plot of miner at given direction
-		GetNextPlot(miner, dir, out Vector2 dirVector, out Vector2 nextCoord, out PlotData nextPlot);
-
-		//? Are able to dig in this direction
-		//STOP dig and this direction are no longer available when next plot have exist
-		if(nextPlot != null) {SetDirectionUnavailable(dir, miner); return;}
-		//STOP dig if has reach max plot amount or not allow
-		if(plots.Count >= amount || !allow) {return;}
-		//STOP dig if miner has dig over the maximum allow
-		if(miner.digCount >= digRequirement.maximum) {return;}
-
-		//? Dig an new plot for miner at direction in direction vector with next corrdinate
-		DigPlot(miner, dir, dirVector, nextCoord);
-	}
-
 	void DecideDirectionToDig(PlotData miner)
 	{
 		//Set the result of each direction
@@ -212,27 +195,25 @@ public class DiggerGeneration : MonoBehaviour
 			TryToBypass(miner, miner.bypassDirection);
 		}
 	}
-
-	void TryToBypass(PlotData bypasser, int direction)
+	
+	void CheckingDigProgress(PlotData miner)
 	{
-		//Get the next plot of bypasser in given direction to attempt that plot
-		GetNextPlot(bypasser, direction, out Vector2 dirVector, out Vector2 nextCoord, out PlotData attempt);
-		//If there still plot at the attempt
-		if(attempt != null) 
+		//Has this miner retry
+		bool retry = false;
+		//If there no miner left or this miner haven't dig the bare minimum 
+		if(miners.Count == 0 || miner.digCount < digRequirement.minimum)
 		{
-			//Try to bypass that attempt in the same direction
-			TryToBypass(attempt, direction);
-			//Change the draft color at attempt index to bypassed
-			ChangeDraftColor(attempt.index, Builder.Draft.Colors.bypassed);
+			//Retry again at this miner
+			StartCoroutine(Digging(miner, miner)); retry = true;
 		}
-		//If there no longer plot at attempt
-		else
+		//If this miner are not bypasser, haven't dig anything and is not retrying
+		if(!retry && miner.digCount == 0 && miner.bypassDirection == -1)
 		{
-			//Dig an new plot at the same direction in direction vector with next corrdinate
-			DigPlot(bypasser, direction, dirVector, nextCoord);
+			//Change the draft color at miner index to over
+			ChangeDraftColor(miner.index, Builder.Draft.Colors.over);
 		}
 	}
-
+	
 	bool[] RandomizingDirectionResult()
 	{
 		//The result for each direction
@@ -261,6 +242,49 @@ public class DiggerGeneration : MonoBehaviour
 		return result;
 	}
 
+	void TryToDig(PlotData miner, int dir, bool allow)
+	{
+		//? Get the next plot of miner at given direction
+		GetNextPlot(miner, dir, out Vector2 dirVector, out Vector2 nextCoord, out PlotData nextPlot);
+
+		//? Are able to dig in this direction
+		//STOP dig and this direction are no longer available when next plot have exist
+		if(nextPlot != null) {SetDirectionUnavailable(dir, miner); return;}
+		//STOP dig if has reach max plot amount or not allow
+		if(plots.Count >= amount || !allow) {return;}
+		//STOP dig if miner has dig over the maximum allow
+		if(miner.digCount >= digRequirement.maximum) {return;}
+
+		//? Dig an new plot for miner at direction in direction vector with next corrdinate
+		DigPlot(miner, dir, dirVector, nextCoord);
+	}
+
+	void TryToBypass(PlotData bypasser, int direction)
+	{
+		//Get the next plot of bypasser in given direction to attempt that plot
+		GetNextPlot(bypasser, direction, out Vector2 dirVector, out Vector2 nextCoord, out PlotData attempt);
+		//If there still plot at the attempt
+		if(attempt != null) 
+		{
+			//Try to bypass that attempt in the same direction
+			TryToBypass(attempt, direction);
+			//Change the draft color at attempt index to bypassed
+			ChangeDraftColor(attempt.index, Builder.Draft.Colors.bypassed);
+		}
+		//If there no longer plot at attempt
+		else
+		{
+			//Dig an new plot at the same direction in direction vector with next corrdinate
+			DigPlot(bypasser, direction, dirVector, nextCoord);
+		}
+	}
+
+	void SetDirectionUnavailable(int dir, PlotData miner) 
+	{
+		//Remove the requested direction from availability of miner if haven't
+		if(miner.availableDirection.Contains(dir)) miner.availableDirection.Remove(dir);
+	}
+	
 	void GetNextPlot(PlotData plot,int dir,out Vector2 dirVector,out Vector2 nextCoord,out PlotData nextPlot)
 	{
 		//Get the vector of this current direction
@@ -271,38 +295,12 @@ public class DiggerGeneration : MonoBehaviour
 		nextPlot = FindPlotAtCoordinate(nextCoord);
 	}
 
-	void CheckingDigProgress(PlotData miner)
-	{
-		//Has this miner retry
-		bool retry = false;
-		//If there no miner left or this miner haven't dig the bare minimum 
-		if(miners.Count == 0 || miner.digCount < digRequirement.minimum)
-		{
-			//Retry again at this miner
-			StartCoroutine(Digging(miner, miner)); retry = true;
-		}
-		//If this miner are not bypasser, haven't dig anything and is not retrying
-		if(!retry && miner.digCount == 0 && miner.bypassDirection == -1)
-		{
-			//Change the draft color at miner index to over
-			ChangeDraftColor(miner.index, Builder.Draft.Colors.over);
-		}
-	}
-
-	void SetDirectionUnavailable(int dir, PlotData miner) 
-	{
-		//Remove the requested direction from availability of miner if haven't
-		if(miner.availableDirection.Contains(dir)) miner.availableDirection.Remove(dir);
-	}
-
 	void DigPlot(PlotData miner, int dir, Vector2 dirVector, Vector2 nextCoord)
 	{
 		//If this direction haven't got empty neighbor then create one
 		if(miner.neighbors[dir] == null) miner.neighbors[dir] = new NeighborData();
-		//Save the spacing and increase the spacing with floor size if using auto scale
-		float spaced = builder.spacing; if(builder.autoScale) {spaced += MasterScaling("floor");}
-		//Get the next position by increase miner position with direction got multiply with spaced
-		Vector2 nextPos = miner.position + (dirVector * spaced);
+		//Get the next position by using miner with direction vector
+		Vector2 nextPos = GetPositionInDirectionVector(miner, dirVector);
 		//Create an new digged plot with index of plot count at direction coordinate and next position
 		PlotData newDig = CreatePlot(plots.Count, nextCoord, nextPos);
 		//Counting this dig of miner
@@ -329,10 +327,32 @@ public class DiggerGeneration : MonoBehaviour
 
 	void CompleteDig()
 	{
+		//Set all 4 neighbors of all plot
+		SetAllPlotsNeighbors();
 		//No longer generating
 		generating = false;
 		//Call complete generation event
 		generationCompleted?.Invoke();
+	}
+
+	void SetAllPlotsNeighbors()
+	{
+		//Go through all the plot to go through all 4 of it neighbor
+		for (int p = 0; p < plots.Count; p++) for (int d = 0; d < 4; d++)
+		{
+			//Get the vector in this direction
+			Vector2 dirVector = DirectionIndexToVector(d);
+			//If this direction haven't got empty neighbor then create one
+			if(plots[p].neighbors[d] == null) plots[p].neighbors[d] = new NeighborData();
+			//Get the neighbor in this direction of this plot
+			NeighborData neighbor = plots[p].neighbors[d];
+			//Get coordinate of this neighbor by increase this plot coordinate with direction vector
+			neighbor.coordinate = plots[p].coordinate + dirVector;
+			//Get position of this neighbot by using this plot with direction vector
+			neighbor.position = GetPositionInDirectionVector(plots[p], dirVector);
+			//Find the an plot at this neighbor coordinate to check if it got digged
+			if(FindPlotAtCoordinate(neighbor.coordinate) != null) neighbor.hasDig = true;
+		}
 	}
 	
 #region Converter
@@ -361,6 +381,14 @@ public class DiggerGeneration : MonoBehaviour
 		}
 		//Send an error if there no structure that needed
 		Debug.LogError("There no '"+structure+"' structure"); return -1;
+	}
+
+	Vector2 GetPositionInDirectionVector(PlotData plot, Vector2 dirVector)
+	{
+		//Save the spacing and increase the spacing with floor size if using auto scale
+		float spaced = builder.spacing; if(builder.autoScale) {spaced += MasterScaling("floor");}
+		//Return the plot position that got increase with direction vector multiply with spaced
+		return plot.position + (dirVector * spaced);
 	}
 #endregion
 

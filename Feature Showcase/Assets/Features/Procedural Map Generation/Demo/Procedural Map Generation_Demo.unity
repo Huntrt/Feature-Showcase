@@ -160,7 +160,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 12.914978}
+  m_AnchoredPosition: {x: 2, y: 12.914978}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0.5}
 --- !u!114 &3185825
@@ -254,7 +254,7 @@ GameObject:
   m_Layer: 0
   m_Name: Digger Generator
   m_TagString: Untagged
-  m_Icon: {fileID: 2488908585195742037, guid: 0000000000000000d000000000000000, type: 0}
+  m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
@@ -282,7 +282,7 @@ MonoBehaviour:
     left: 0
     right: 0
   digRequirement:
-    maximum: 1
+    maximum: 2
     minimum: 0
   builder:
     spacing: 0.05
