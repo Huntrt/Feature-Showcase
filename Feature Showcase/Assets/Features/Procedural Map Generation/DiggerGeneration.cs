@@ -224,7 +224,6 @@ public class DiggerGeneration : MonoBehaviour
 			TryToBypass(attempt, direction);
 			//Change the draft color at attempt index to bypassed
 			ChangeDraftColor(attempt.index, Builder.Draft.Colors.bypassed);
-			print(attempt.index);
 		}
 		//If there no longer plot at attempt
 		else
