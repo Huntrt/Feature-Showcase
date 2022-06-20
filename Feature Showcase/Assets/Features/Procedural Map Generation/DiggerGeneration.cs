@@ -29,6 +29,52 @@ public class DiggerGeneration : MonoBehaviour
 	public event Action generationCompleted, structureBuilded;
 	
 #region Classes
+	[Serializable] public class Builder
+	{
+		public float spacing; 
+		[Tooltip("All structure size will multiply with this scale")] 
+		public float masterScale;
+		[Tooltip("The following will be change:\n- Bridge length will be scale with spacing\n- Wall will be scale wih bridge and wall size\n- Value that got auto scale will now use to modify")]
+		public bool autoScale;
+		public Draft draft; [Serializable] public class Draft
+		{
+			public bool enable;
+			public GameObject prefab;
+			public float size;
+			public Color digged, miner, stuck, bypassed, over;
+			public enum Colors {digged, miner, stuck, bypassed, over};
+			[HideInInspector] public GameObject grouper;
+		}
+		public Floor floor; [Serializable] public class Floor
+		{
+			public bool enable;
+			[Tooltip("Room: Create wall in all direction unless there is bridge then create an gate\nLand: Only create wall when there no floor in that direction")]
+			public WallMode wallMode; public enum WallMode {room, land}
+			public GameObject prefab;
+			public float size;
+			public Color color;
+			[HideInInspector] public GameObject grouper;
+		}
+		public Bridge bridge; [Serializable] public class Bridge
+		{
+			public bool enable;
+			[Tooltip("The chance for plot to bridge more than 1 neighbour")][Range(0,100)]
+			public float bridgeChance;
+			public GameObject prefab;
+			public float width, length;
+			public Color color;
+			[HideInInspector] public GameObject grouper;
+		}
+		public Wall wall; [Serializable] public class Wall
+		{
+			public bool enable;
+			public GameObject prefab;
+			public float thick, length;
+			public Color color;
+			[HideInInspector] public GameObject grouper;
+		}
+	}
+	
 	[Serializable] public class DirectionalChance 
 	{
 		public bool use; [Range(0,100)] 
@@ -41,43 +87,8 @@ public class DiggerGeneration : MonoBehaviour
 		[Range(0,4)][Tooltip("The minimum amount of plot the miner need to dig")]
 		public int minimum;
 	}
-	[Serializable] public class Builder
-	{
-		public float spacing; 
-		[Tooltip("All structure size will multiply with this scale")] 
-		public float masterScale;
-		[Tooltip("The following will be change:\n- Spacing will take into account of floor size\n- Bridge length will be scale with spacing\n- Wall will be scale wih bridge and wall size\n- Value that got auto scale will now use to modify")]
-		public bool autoScale;
-		public Draft draft; [Serializable] public class Draft
-		{
-			public GameObject prefab;
-			public float size;
-			public Color digged, miner, stuck, bypassed, over;
-			public enum Colors {digged, miner, stuck, bypassed, over};
-			[HideInInspector] public GameObject grouper;
-		}
-		public Floor floor; [Serializable] public class Floor
-		{
-			public GameObject prefab;
-			public float size;
-			public Color color;
-			[HideInInspector] public GameObject grouper;
-		}
-		public Bridge bridge; [Serializable] public class Bridge
-		{
-			public GameObject prefab;
-			public float width, length;
-			public Color color;
-			[HideInInspector] public GameObject grouper;
-		}
-		public Wall wall; [Serializable] public class Wall
-		{
-			public GameObject prefab;
-			public float thick, length;
-			public Color color;
-			[HideInInspector] public GameObject grouper;
-		}
-	}
+
+	#region Datas
 	[Serializable] public class PlotData
 	{
 		public int index, digCount;
@@ -88,6 +99,7 @@ public class DiggerGeneration : MonoBehaviour
 	}
 	[Serializable] public class NeighborData
 	{
+		public int index;
 		public Vector2 coordinate, position;
 		public bool hasDig;
 		[Tooltip("Is this neighbor got dig by this plot?")]
@@ -96,22 +108,22 @@ public class DiggerGeneration : MonoBehaviour
 	[Serializable] public class DraftData
 	{
 		public int plotIndex;
-		public GameObject obj;
-		public SpriteRenderer renderer;
+		public GameObject obj; public SpriteRenderer renderer;
 	}
 	[Serializable] public class FloorData
 	{
 		public int plotIndex;
-		public GameObject obj;
+		public GameObject obj; public SpriteRenderer renderer;
 		public List<GameObject> walls = new List<GameObject>();
 	}
 	[Serializable] public class BridgeData
 	{
-		public int[] connection = new int[2];
+		public int[] connectionIndex = new int[2];
 		public int direction;
-		public GameObject obj;
-		public List<GameObject> walls = new List<GameObject>();
+		public GameObject obj; public SpriteRenderer renderer;
+		public GameObject[] walls = new GameObject[2];
 	}
+	#endregion
 #endregion
 
 	void Update() 
@@ -120,16 +132,17 @@ public class DiggerGeneration : MonoBehaviour
 		if(Input.GetKey(KeyCode.Space)) Dig();
 		//% LOAD THIS SCENE when pressed R
 		if(Input.GetKeyDown(KeyCode.R)) UnityEngine.SceneManagement.SceneManager.LoadScene(3, UnityEngine.SceneManagement.LoadSceneMode.Single);
+		//% Clear generation when pressed X
+		if(Input.GetKeyDown(KeyCode.X)) ClearGeneration(false);
 	}
 
+#region Generation
 	public void Dig(bool overwrite = false)
 	{
 		//Don't dig if currently generating when no need to overwriten
 		if(generating) {if(!overwrite) {return;}}
-		//Renewing structure to dig
-		RenewStructure();
-		//Clear all the plots
-		plots.Clear();
+		//Clearing all generation to dig
+		ClearGeneration(true);
 		//Are now generating
 		generating = true;
 		//Create an plot at 0,0 then set it position at start position
@@ -147,53 +160,13 @@ public class DiggerGeneration : MonoBehaviour
 		//Wait for an frame
 		yield return null;
 		//Begin decide direction to dig at this miner
-		DecideDirectionToDig(miner);
+		DirectionalDigging(miner);
 		//Remove this miner after try to dig
 		miners.Remove(miner);
 		//Begin check the digging progress if haven't dig enough plot
 		if(plots.Count < amount) {CheckingDigProgress(miner);}
 		//Dig are complete when there no miner left
 		if(miners.Count <= 0) {CompleteDig();}
-	}
-
-	void DecideDirectionToDig(PlotData miner)
-	{
-		//Set the result of each direction
-		bool[] result = RandomizingDirectionResult();
-		//Create an temporary the list of available direction
-		List<int> aDir = new List<int>(miner.availableDirection);
-		/// DIG
-		//Go through all 4 direction when there still available direction
-		if(miner.availableDirection.Count > 0) for (int d = 0; d < 4; d++)
-		{
-			//Exit if out of temporary direction
-			if(aDir.Count == 0) {break;}
-			//Randomly get the available direction gonna use
-			int use = UnityEngine.Random.Range(0, aDir.Count);
-			//Try to dig at that available direction with it result
-			TryToDig(miner, aDir[use], result[use]);
-			//Remove this direction from temporary
-			aDir.Remove(use);
-		}
-		/// BYPASS
-		//If there are no available direction and this is the only miner
-		else if(miners.Count <= 1)
-		{
-			//Will continuous run until miner has direction to bypass
-			while (miner.bypassDirection == -1)
-			{
-				//Refresh direction result for bypass
-				result = RandomizingDirectionResult();
-				//Randomly get an choose an direction index
-				int choosed = UnityEngine.Random.Range(0,4);
-				//If the result in choosed direction are true then miner bypass in that direction
-				if(result[choosed] == true) miner.bypassDirection = choosed;
-			}
-			//Change the draft color at miner index to stuck
-			ChangeDraftColor(miner.index, Builder.Draft.Colors.stuck);
-			//Try to bypass at miner in bypass direction has get
-			TryToBypass(miner, miner.bypassDirection);
-		}
 	}
 	
 	void CheckingDigProgress(PlotData miner)
@@ -213,8 +186,48 @@ public class DiggerGeneration : MonoBehaviour
 			ChangeDraftColor(miner.index, Builder.Draft.Colors.over);
 		}
 	}
+
+	void DirectionalDigging(PlotData miner)
+	{
+		//Get the result of each direction to dig
+		bool[] result = RandomizingDigDirection();
+		//Create an temporary the list of available direction
+		List<int> aDir = new List<int>(miner.availableDirection);
+		/// DIG
+		//Go through all 4 direction when there still available direction
+		if(miner.availableDirection.Count > 0) for (int d = 0; d < 4; d++)
+		{
+			//Exit if out of temporary direction
+			if(aDir.Count == 0) {break;}
+			//Randomly get the available direction gonna use
+			int use = UnityEngine.Random.Range(0, aDir.Count);
+			//Try to dig at that available direction with it result
+			TryToDig(miner, aDir[use], result[use]);
+			//Remove this direction from temporary
+			aDir.Remove(use);
+		}
+		/// BYPASS
+		//If there are no available direction and this is the only miner left
+		else if(miners.Count <= 1)
+		{
+			//Will continuous run until miner has direction to bypass
+			while (miner.bypassDirection == -1)
+			{
+				//Refresh dig direction result for bypass
+				result = RandomizingDigDirection();
+				//Randomly get an choose an direction index
+				int choosed = UnityEngine.Random.Range(0,4);
+				//If the result in choosed direction are true then miner bypass in that direction
+				if(result[choosed] == true) miner.bypassDirection = choosed;
+			}
+			//Change the draft color at miner index to stuck
+			ChangeDraftColor(miner.index, Builder.Draft.Colors.stuck);
+			//Try to bypass at miner in bypass direction has get
+			TryToBypass(miner, miner.bypassDirection);
+		}
+	}
 	
-	bool[] RandomizingDirectionResult()
+	bool[] RandomizingDigDirection()
 	{
 		//The result for each direction
 		bool[] result = new bool[4];
@@ -325,16 +338,6 @@ public class DiggerGeneration : MonoBehaviour
 		plots.Add(newPlot); return newPlot;
 	}
 
-	void CompleteDig()
-	{
-		//Set all 4 neighbors of all plot
-		SetAllPlotsNeighbors();
-		//No longer generating
-		generating = false;
-		//Call complete generation event
-		generationCompleted?.Invoke();
-	}
-
 	void SetAllPlotsNeighbors()
 	{
 		//Go through all the plot to go through all 4 of it neighbor
@@ -350,10 +353,46 @@ public class DiggerGeneration : MonoBehaviour
 			neighbor.coordinate = plots[p].coordinate + dirVector;
 			//Get position of this neighbot by using this plot with direction vector
 			neighbor.position = GetPositionInDirectionVector(plots[p], dirVector);
-			//Find the an plot at this neighbor coordinate to check if it got digged
-			if(FindPlotAtCoordinate(neighbor.coordinate) != null) neighbor.hasDig = true;
+			//Find the plot at this neighbor coordinate
+			PlotData finded = FindPlotAtCoordinate(neighbor.coordinate);
+			//If finded the plot then set neighbor as finded index and that neighbor has dig
+			if(finded != null) {neighbor.index = finded.index; neighbor.hasDig = true;}
 		}
 	}
+
+	void CompleteDig()
+	{
+		//Set all 4 neighbors of all plot
+		SetAllPlotsNeighbors();
+		//No longer generating
+		generating = false;
+		//Call complete generation event
+		generationCompleted?.Invoke();
+		//Begin build structure after generated
+		AssembleStructure();
+	}
+
+	public void ClearGeneration(bool refresh)
+	{
+		//Don clear if still generating
+		if(generating) return;
+		//Clear all the plots
+		plots.Clear();
+		// Clear all structure list
+		drafts.Clear(); floors.Clear(); bridges.Clear();
+		//@ Destroy all the structure grouper
+		if(builder.draft.grouper != null) Destroy(builder.draft.grouper);
+		if(builder.floor.grouper != null) Destroy(builder.floor.grouper);
+		if(builder.bridge.grouper != null) Destroy(builder.bridge.grouper);
+		if(builder.wall.grouper != null) Destroy(builder.wall.grouper);
+		//@ Create new grouper and name them if needed to refreash
+		if(!refresh) return;
+		builder.draft.grouper = new GameObject(); builder.draft.grouper.name = "Dafts Group";
+		builder.floor.grouper = new GameObject(); builder.floor.grouper.name = "Floor Group";
+		builder.bridge.grouper = new GameObject(); builder.bridge.grouper.name = "Bridge Group";
+		builder.wall.grouper = new GameObject(); builder.wall.grouper.name = "Wall Group";
+	}
+#endregion
 	
 #region Converter
 	Vector2 DirectionIndexToVector(int index)
@@ -415,26 +454,197 @@ public class DiggerGeneration : MonoBehaviour
 #endregion
 
 #region Builder
-	void RenewStructure()
+
+	//? Assemble Structure -> Build X -> Format X -> Create Structure -> Listing X
+
+	void AssembleStructure()
 	{
-		//@ Destroy all the structure grouper
-		if(builder.draft.grouper != null) Destroy(builder.draft.grouper);
-		if(builder.floor.grouper != null) Destroy(builder.floor.grouper);
-		if(builder.bridge.grouper != null) Destroy(builder.bridge.grouper);
-		if(builder.wall.grouper != null) Destroy(builder.wall.grouper);
-		//@ Create new grouper and name them
-		builder.draft.grouper = new GameObject(); builder.draft.grouper.name = "Dafts Group";
-		builder.floor.grouper = new GameObject(); builder.floor.grouper.name = "Floor Group";
-		builder.bridge.grouper = new GameObject(); builder.bridge.grouper.name = "Bridge Group";
-		builder.wall.grouper = new GameObject(); builder.wall.grouper.name = "Wall Group";
-		//@ Clear all structure list
-		drafts.Clear(); floors.Clear(); bridges.Clear();
+		//Begin build bridge for all the plot if enable
+		if(builder.bridge.enable) {for (int p = 0; p < plots.Count; p++) {BuildBridge(plots[p]);}}
+	}
+
+	void BuildBridge(PlotData plot)
+	{
+		//Get connection to use for bridging of plot given
+		NeighborData[] connects = GetConnectionToBridge(plot);
+		//Go through all 4 connection of plot given
+		for (int c = 0; c < 4; c++)
+		{
+			//Skip if this current connection don't exist
+			if(connects[c] == null) continue;
+			//Create an bridge from plot to connection
+			GameObject bridge = FormatBridge(plot, connects[c], c);
+			//Get the connection from plot to current connect index
+			int[] connection = new int[]{plot.index, connects[c].index};
+			//List bridge with connection, bridge object then build it railing
+			ListingBridge(connection,c, bridge, BuildRailing(bridge, c, connection));
+		}
+	}
+
+	NeighborData[] GetConnectionToBridge(PlotData plot)
+	{
+		//Create 4 empty connection
+		NeighborData[] connects = new NeighborData[4];
+		//Go through all 4 of neighbor to connect
+		for (int n = 0; n < 4; n++)
+		{
+			//Save the current neighbor
+			NeighborData neighbor = plot.neighbors[n];
+			//This connect will be this plot neighbour if it got dig by the plot then skip randomzie
+			if(neighbor.digByThis) {connects[n] = neighbor; continue;}
+			//? Randomize Bridging
+			//See if the plot neighbor and itself are already connect
+			bool alreadyConnect = false;
+			//Save the connection of plot and it neighbor
+			int[] connection = new int[]{neighbor.index, plot.index};
+			//Go through all the bridge
+			for (int b = 0; b < bridges.Count; b++)
+			{
+				//Get the connected index of current bridge
+				int[] connected = bridges[b].connectionIndex;
+				//How many connection are the same as connected
+				int hasConnected = 0;
+				//@ Count how many connection of current bridge match the index of neighbour or plot
+				if(connection[0] == connected[0] || connection[1] == connected[0]) hasConnected++;
+				if(connection[0] == connected[1] || connection[1] == connected[1]) hasConnected++;
+				//Already connect when both connection match
+				if(hasConnected == 2) alreadyConnect = true;
+			}
+			//The randomize result to bridge 
+			float chance = UnityEngine.Random.Range(0f,100f);
+			//If chance allow to dig when the neighbour has been dig and not already connect
+			if(builder.bridge.bridgeChance >= chance && neighbor.hasDig && !alreadyConnect)
+			{
+				//This connect will be this plot neighbour
+				connects[n] = neighbor;
+			}
+		}
+		//Return all connection has made
+		return connects;
+	}
+
+	GameObject FormatBridge(PlotData plot, NeighborData connect, int dir)
+	{
+		//Get this plot and current connect position
+		Vector2 plotP = plot.position; Vector2 conP = connect.position;
+		//Get position at the middle point between the plot and it connection
+		Vector2 pos = new Vector2(plotP.x + (conP.x - plotP.x)/2, plotP.y + (conP.y - plotP.y)/2);
+		//Get the bridge length and increase with spacing if auto scale enable
+		float length = builder.bridge.length; if(builder.autoScale) {length += builder.spacing;}
+		//Bridge scaling X as length and Y as width
+		Vector2 scale = new Vector2(length, MasterScaling("bridge"));
+		//Rotation default are 0 for horizontal and 90 if vertical
+		float rot = 0; if(dir <= 1) rot = 90;
+		//Set name for this bridge (X > Y Bridge)
+		string name = plot.index + " > " + connect.index + " Bridge";
+		//Return the newly create an bridge structure using all the data above
+		return CreateStructure(name, "bridge", pos, scale, rot);
+	}
+
+	GameObject[] BuildRailing(GameObject bridge, int direction, int[] index)
+	{
+		//Create 2 empty gameobject to store railing
+		GameObject[] walls = new GameObject[2];
+		//Create 2 vector for wall position and scale
+		Vector2[] wallsPos = new Vector2[2]; Vector2[] wallScale = new Vector2[2];
+		//Get the bridge position
+		Vector2 bridgePos = bridge.transform.position;
+		//Get the thick of wall by master scaling
+		float thicked = MasterScaling("wall");
+		//Get how far to place wall by increase half of bridge width with wall thick
+		float railingSpaced = (MasterScaling("bridge")/2) + (MasterScaling("wall")/2);
+		//@ Set the wall position and scale in certain axis base on it horizontal or vertical
+		//The bridge are vertical
+		if(direction <= 1)
+		{
+			wallsPos[0]  = new Vector2(bridgePos.x + railingSpaced, bridgePos.y);
+			wallsPos[1]  = new Vector2(bridgePos.x - railingSpaced, bridgePos.y);
+			wallScale[0] = new Vector3(thicked, builder.spacing);
+			wallScale[1] = new Vector3(thicked, builder.spacing);
+		}
+		//The bridge are horizontal
+		else
+		{
+			wallsPos[0]  = new Vector2(bridgePos.x, bridgePos.y + railingSpaced);
+			wallsPos[1]  = new Vector2(bridgePos.x, bridgePos.y - railingSpaced);
+			wallScale[0] = new Vector3(builder.spacing, thicked);
+			wallScale[1] = new Vector3(builder.spacing, thicked);
+		}
+		//Go through 2 railing
+		for (int r = 0; r < 2; r++)
+		{
+			//Set the name for railing (X > Y Raling [R])
+			string name = index[0] + " > " + index[1] + " Railing ["+r+"]";
+			//Create an wall at position and scale has get
+			walls[r] = CreateStructure(name, "wall", wallsPos[r], wallScale[r], 0);
+		}
+		//Return railing has build
+		return walls;
+	}
+
+	GameObject CreateStructure(string naming,string structure,Vector2 position,Vector2 scale,float rotation)
+	{
+		//An empty prefab and grouper to use
+		GameObject prefab = null; GameObject grouper = null; 
+		//@ Set the structure prefab and grouper as the name given
+		switch(structure)
+		{
+			case "floor" : prefab = builder.floor.prefab ; grouper = builder.floor.grouper ; break;
+			case "bridge": prefab = builder.bridge.prefab; grouper = builder.bridge.grouper; break;
+			case "wall"  : prefab = builder.wall.prefab  ; grouper = builder.wall.grouper  ; break;
+		}
+		//Send an error if there no structure that needed
+		if(prefab == null) Debug.LogError("There no '"+structure+"' structure to create");
+		//Instantiate an structure prefab in given position and with given rotation
+		GameObject builded = Instantiate(prefab, position, Quaternion.Euler(0,0,rotation));
+		//Set the builded structure scale as given
+		builded.transform.localScale = scale;
+		//Group the builded structure
+		builded.transform.SetParent(grouper.transform);
+		//Add set structure name
+		builded.name = naming;
+		//Return the builded structure
+		return builded;
+	}
+
+	void ListingFloor(int index, GameObject obj, List<GameObject> wall)
+	{
+		//@ Create empty floor data then assign given data to it
+		FloorData data = new FloorData();
+		data.plotIndex = index; 
+		data.obj = obj;
+		data.renderer = obj.GetComponent<SpriteRenderer>(); 
+		data.walls = wall;
+
+		//@ Color the floor and it walls
+		data.renderer.color = builder.floor.color;
+		if(wall != null) for (int w = 0; w < wall.Count; w++)
+		{wall[w].GetComponent<SpriteRenderer>().color = builder.wall.color;}
+		//Add floor data to list
+		floors.Add(data);
+	}
+
+	void ListingBridge(int[] connection, int direction, GameObject obj, GameObject[] wall)
+	{
+		//@ Create empty bridge data then assign given data to it
+		BridgeData data = new BridgeData();
+		data.connectionIndex = connection; 
+		data.direction = direction; 
+		data.obj = obj;
+		data.renderer = obj.GetComponent<SpriteRenderer>(); data.walls = wall;
+
+		//@ Color the bridge and it walls
+		data.renderer.color = builder.bridge.color;
+		if(wall != null) for (int w = 0; w < wall.Length; w++)
+		{wall[w].GetComponent<SpriteRenderer>().color = builder.wall.color;}
+		//Add bridge data to list
+		bridges.Add(data);
 	}
 
 	void Drafting(PlotData miner, PlotData digged)
 	{
-		//Only need to create new draft if some plots haven't get draft
-		if(drafts.Count >= plots.Count) {return;}
+		//Only need to create new draft if plots haven't get enough draft and only when need to draft
+		if(drafts.Count >= plots.Count || !builder.draft.enable) return;
 		//Setup an empty new draft
 		DraftData newDraft = new DraftData();
 		//Save the miner index to draft's plot index
@@ -459,6 +669,8 @@ public class DiggerGeneration : MonoBehaviour
 
 	void ChangeDraftColor(int index, Builder.Draft.Colors color)
 	{
+		//Only change draft color if drafting enable
+		if(!builder.draft.enable) return;
 		//Get the sprite render of draft at given index
 		SpriteRenderer renderer = drafts[index].renderer;
 		//@ Set that draft color color according to given string

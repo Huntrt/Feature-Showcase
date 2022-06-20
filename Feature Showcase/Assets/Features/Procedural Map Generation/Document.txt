@@ -1,19 +1,33 @@
 # Digger:
-	Process:
+	Process: (+ Process | > Action | "" Variable | ? Possible | $ Condition)
 		+ Set Plot:
 			> The "plot" that handle digging an new "plot" will know as "miner".
 			> The "miner" will decide an random direction to dig an new "plot".
 			> The newly dig "plot" will be know as the new "miner"...
-			> If during dig the following condition meet:
-				- All 4 direction of "miner" are digged. 
-				- Still need more "plot".
-				> Choose an random direction and go until no longer on digged "plot".
+			? If during dig the following condition meet:
+				$ All 4 direction of "miner" are digged. 
+				$ Still need more "plot".
+				> Choose an random direction and bypass them until no longer on digged "plot".
 				> Set "miner" from there...
+
 		+ Decide Neighbor:
-			> An "plot" has list of 4 neighbor for each direction.
-			> Each neighbor will has digByThis and hasDig:
-				digByThis = This neighbor has been dig by this "plot".
-				hasDig = This neighbor has been dig.
-			> When an "miner" digged an new "plot" it will mark that newly dig as "digByThis" in it neighbor.
+			> An "plot" has list of 4 "neighbor" for each direction.
+			> Each "neighbor" will has "digByThis" and "hasDig":
+				digByThis = This "neighbor" has been dig by this "plot".
+				hasDig    = This "neighbor" has been dig.
+			> When an "miner" digged an new "plot" it will mark that newly dig as "digByThis" in it "neighbor".
 			> Go through all the "plot" to check 4 direction of that "plot".
-			> If there is digged "plot" then mark it as "hasDig" in neighbor.
+			> If there is digged "plot" in that direction then mark it as "hasDig" in it "neighbor".
+			> When check "neighbor" the "plot" will also store that "neighbor" important data.
+
+		+ Building Bridge:
+			> Go through all the "plot" then get "connection" for each of them to "bridge".
+			> How to get "connection" are depend on what mode the user choose:
+				? Adjacent   = All "plot" will has bridge connect to it "neighbor".
+				? Generation = "Bridge" will connect base on how it was dig.
+				? Randomize  = "Plot" will randomly choose an "neighbor" to "bridge" to.
+			> Check if all it "connection" has get are "hasDig" and it not duplicate.
+			> Format "bridge" such as it position, scaling, etc... for all "connection" has get.
+			> Buid "bridge" using format info.
+			> Create "railing" at bridge position modify with half of bridge width and wall thick.
+			> "Railing" modify and scale are base on direction of bridge it create.
