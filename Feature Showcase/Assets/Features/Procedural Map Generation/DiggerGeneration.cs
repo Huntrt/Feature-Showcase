@@ -58,7 +58,7 @@ public class DiggerGeneration : MonoBehaviour
 		public Bridge bridge; [Serializable] public class Bridge
 		{
 			public bool enable;
-			[Tooltip("The chance for plot to bridge more than 1 neighbour")][Range(0,100)]
+			[Tooltip("The chance for plot to bridge more than 1 neighbor")][Range(0,100)]
 			public float bridgeChance;
 			public GameObject prefab;
 			public float width, length;
@@ -93,17 +93,17 @@ public class DiggerGeneration : MonoBehaviour
 	{
 		public int index, digCount;
 		public Vector2 coordinate, position;
-		public List<int> availableDirection = new List<int>{0,1,2,3};
 		public NeighborData[] neighbors = new NeighborData[4];
 		[HideInInspector] public int bypassDirection = -1;
+		[HideInInspector] public List<int> availableDirection = new List<int>{0,1,2,3};
 	}
 	[Serializable] public class NeighborData
 	{
-		public int index;
+		public int index = -1;
 		public Vector2 coordinate, position;
-		public bool hasDig;
+		public bool digged;
 		[Tooltip("Is this neighbor got dig by this plot?")]
-		public bool digByThis;
+		public bool digByThis; public bool hasBridge;
 	}
 	[Serializable] public class DraftData
 	{
@@ -355,8 +355,8 @@ public class DiggerGeneration : MonoBehaviour
 			neighbor.position = GetPositionInDirectionVector(plots[p], dirVector);
 			//Find the plot at this neighbor coordinate
 			PlotData finded = FindPlotAtCoordinate(neighbor.coordinate);
-			//If finded the plot then set neighbor as finded index and that neighbor has dig
-			if(finded != null) {neighbor.index = finded.index; neighbor.hasDig = true;}
+			//If the finded plot exist then set this neighbor as finded index and mark as digged
+			if(finded != null) {neighbor.index = finded.index; neighbor.digged = true;}
 		}
 	}
 
@@ -490,8 +490,16 @@ public class DiggerGeneration : MonoBehaviour
 		{
 			//Save the current neighbor
 			NeighborData neighbor = plot.neighbors[n];
-			//This connect will be this plot neighbour if it got dig by the plot then skip randomzie
-			if(neighbor.digByThis) {connects[n] = neighbor; continue;}
+			//If this neighbour dig by given plot 
+			if(neighbor.digByThis) 
+			{
+				//This connect will be given plot neighbor 
+				connects[n] = neighbor; 
+				//The neighbor of given plot has been bridge in this connection
+				plot.neighbors[n].hasBridge = true;
+				//Skip conection randomzie
+				continue;
+			}
 			//? Randomize Bridging
 			//See if the plot neighbor and itself are already connect
 			bool alreadyConnect = false;
@@ -504,7 +512,7 @@ public class DiggerGeneration : MonoBehaviour
 				int[] connected = bridges[b].connectionIndex;
 				//How many connection are the same as connected
 				int hasConnected = 0;
-				//@ Count how many connection of current bridge match the index of neighbour or plot
+				//@ Count how many connection of current bridge match the index of neighbor or plot
 				if(connection[0] == connected[0] || connection[1] == connected[0]) hasConnected++;
 				if(connection[0] == connected[1] || connection[1] == connected[1]) hasConnected++;
 				//Already connect when both connection match
@@ -512,11 +520,13 @@ public class DiggerGeneration : MonoBehaviour
 			}
 			//The randomize result to bridge 
 			float chance = UnityEngine.Random.Range(0f,100f);
-			//If chance allow to dig when the neighbour has been dig and not already connect
-			if(builder.bridge.bridgeChance >= chance && neighbor.hasDig && !alreadyConnect)
+			//If chance allow to dig when the neighbor has digged and not already connect
+			if(builder.bridge.bridgeChance >= chance && neighbor.digged)
 			{
-				//This connect will be this plot neighbour
-				connects[n] = neighbor;
+				//This connect will be given plot neighbor if not already connect
+				if(!alreadyConnect) connects[n] = neighbor;
+				//The neighbor of given plot has been bridge in this connection
+				plot.neighbors[n].hasBridge = true;
 			}
 		}
 		//Return all connection has made
