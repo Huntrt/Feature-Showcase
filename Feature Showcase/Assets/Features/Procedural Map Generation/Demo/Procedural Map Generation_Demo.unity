@@ -272,7 +272,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   autoGenerate: 0
   autoDelay: 0
-  amount: 100
+  amount: 10
   startPosition: {x: 0, y: 0}
   digChance: 50
   directionalChance:
@@ -285,11 +285,12 @@ MonoBehaviour:
     maximum: 2
     minimum: 0
   builder:
-    spacing: 0.2
-    masterScale: 0.5
+    spacing: 0.5
+    masterScale: 1
     autoScale: 1
     draft:
       enable: 1
+      clearAfterGenerated: 1
       prefab: {fileID: 4558046587480059573, guid: ca4eee04cfe5b634a999274ded4b3a65,
         type: 3}
       size: 1
@@ -302,18 +303,19 @@ MonoBehaviour:
     floor:
       enable: 1
       wallMode: 0
-      prefab: {fileID: 0}
+      prefab: {fileID: 4558046587480059573, guid: ca4eee04cfe5b634a999274ded4b3a65,
+        type: 3}
       size: 1
-      color: {r: 0, g: 0, b: 0, a: 0}
+      color: {r: 0.1, g: 0.1, b: 0.1, a: 1}
       grouper: {fileID: 0}
     bridge:
       enable: 1
-      bridgeChance: 0
+      bridgeChance: 100
       prefab: {fileID: 4558046587480059573, guid: ca4eee04cfe5b634a999274ded4b3a65,
         type: 3}
       width: 0.3
       length: 0
-      color: {r: 0.4, g: 0.4, b: 0.4, a: 1}
+      color: {r: 0.10196079, g: 0.10196079, b: 0.10196079, a: 1}
       grouper: {fileID: 0}
     wall:
       enable: 1
@@ -321,7 +323,7 @@ MonoBehaviour:
         type: 3}
       thick: 0.1
       length: 0
-      color: {r: 1, g: 1, b: 1, a: 0.4}
+      color: {r: 1, g: 1, b: 1, a: 0.5019608}
       grouper: {fileID: 0}
   plots: []
   miners: []

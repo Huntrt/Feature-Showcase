@@ -38,7 +38,7 @@ public class DiggerGeneration : MonoBehaviour
 		public bool autoScale;
 		public Draft draft; [Serializable] public class Draft
 		{
-			public bool enable;
+			public bool enable, clearAfterDig;
 			public GameObject prefab;
 			public float size;
 			public Color digged, miner, stuck, bypassed, over;
@@ -67,7 +67,7 @@ public class DiggerGeneration : MonoBehaviour
 		}
 		public Wall wall; [Serializable] public class Wall
 		{
-			public bool enable;
+			public bool enableBarrier, enableRailing;
 			public GameObject prefab;
 			public float thick, length;
 			public Color color;
@@ -133,7 +133,7 @@ public class DiggerGeneration : MonoBehaviour
 		//% LOAD THIS SCENE when pressed R
 		if(Input.GetKeyDown(KeyCode.R)) UnityEngine.SceneManagement.SceneManager.LoadScene(3, UnityEngine.SceneManagement.LoadSceneMode.Single);
 		//% Clear generation when pressed X
-		if(Input.GetKeyDown(KeyCode.X)) ClearGeneration(false);
+		if(Input.GetKeyDown(KeyCode.X)) ClearGeneration(false, true);
 	}
 
 #region Generation
@@ -142,7 +142,7 @@ public class DiggerGeneration : MonoBehaviour
 		//Don't dig if currently generating when no need to overwriten
 		if(generating) {if(!overwrite) {return;}}
 		//Clearing all generation to dig
-		ClearGeneration(true);
+		ClearGeneration(true, true);
 		//Are now generating
 		generating = true;
 		//Create an plot at 0,0 then set it position at start position
@@ -255,6 +255,12 @@ public class DiggerGeneration : MonoBehaviour
 		return result;
 	}
 
+	void SetDirectionUnavailable(int dir, PlotData miner) 
+	{
+		//Remove the requested direction from availability of miner if haven't
+		if(miner.availableDirection.Contains(dir)) miner.availableDirection.Remove(dir);
+	}
+
 	void TryToDig(PlotData miner, int dir, bool allow)
 	{
 		//? Get the next plot of miner at given direction
@@ -290,12 +296,6 @@ public class DiggerGeneration : MonoBehaviour
 			//Dig an new plot at the same direction in direction vector with next corrdinate
 			DigPlot(bypasser, direction, dirVector, nextCoord);
 		}
-	}
-
-	void SetDirectionUnavailable(int dir, PlotData miner) 
-	{
-		//Remove the requested direction from availability of miner if haven't
-		if(miner.availableDirection.Contains(dir)) miner.availableDirection.Remove(dir);
 	}
 	
 	void GetNextPlot(PlotData plot,int dir,out Vector2 dirVector,out Vector2 nextCoord,out PlotData nextPlot)
@@ -370,27 +370,39 @@ public class DiggerGeneration : MonoBehaviour
 		generationCompleted?.Invoke();
 		//Begin build structure after generated
 		AssembleStructure();
+		//Only clear draft after generated when needed
+		if(builder.draft.clearAfterDig) ClearDraft(false);
 	}
 
-	public void ClearGeneration(bool refresh)
+	public void ClearGeneration(bool renew, bool clearStructure)
 	{
-		//Don clear if still generating
+		//Dont clear if still generating
 		if(generating) return;
 		//Clear all the plots
 		plots.Clear();
-		// Clear all structure list
-		drafts.Clear(); floors.Clear(); bridges.Clear();
-		//@ Destroy all the structure grouper
-		if(builder.draft.grouper != null) Destroy(builder.draft.grouper);
+		//Clear all structure data list
+		floors.Clear(); bridges.Clear();
+		//Clear draft and renew them if needed
+		ClearDraft(renew);
+		//@ Destroy all the structure grouper if it already exist
 		if(builder.floor.grouper != null) Destroy(builder.floor.grouper);
 		if(builder.bridge.grouper != null) Destroy(builder.bridge.grouper);
 		if(builder.wall.grouper != null) Destroy(builder.wall.grouper);
 		//@ Create new grouper and name them if needed to refreash
-		if(!refresh) return;
-		builder.draft.grouper = new GameObject(); builder.draft.grouper.name = "Dafts Group";
+		if(!renew) return;
 		builder.floor.grouper = new GameObject(); builder.floor.grouper.name = "Floor Group";
 		builder.bridge.grouper = new GameObject(); builder.bridge.grouper.name = "Bridge Group";
 		builder.wall.grouper = new GameObject(); builder.wall.grouper.name = "Wall Group";
+	}
+
+	public void ClearDraft(bool renew)
+	{
+		//Clear draft data list
+		drafts.Clear(); 
+		//Destroy the draft grouper if it already exist
+		if(builder.draft.grouper != null) Destroy(builder.draft.grouper);
+		//Create an new draft grouper if needed to renew
+		if(renew) {builder.draft.grouper = new GameObject(); builder.draft.grouper.name = "Dafts Group";}
 	}
 #endregion
 	
@@ -461,18 +473,21 @@ public class DiggerGeneration : MonoBehaviour
 	{
 		//Begin build bridge for all the plot if enable
 		if(builder.bridge.enable) {for (int p = 0; p < plots.Count; p++) {BuildBridge(plots[p]);}}
+		//Begin build floor for all the plot if enable
+		if(builder.floor.enable) {for (int p = 0; p < plots.Count; p++) {BuildFloor(plots[p]);}}
 	}
 
+	#region Bridge
 	void BuildBridge(PlotData plot)
 	{
 		//Get connection to use for bridging of plot given
-		NeighborData[] connects = GetConnectionToBridge(plot);
+		NeighborData[] connects = GetConnectionForBridge(plot);
 		//Go through all 4 connection of plot given
 		for (int c = 0; c < 4; c++)
 		{
 			//Skip if this current connection don't exist
 			if(connects[c] == null) continue;
-			//Create an bridge from plot to connection
+			//Format an bridge from plot to connection
 			GameObject bridge = FormatBridge(plot, connects[c], c);
 			//Get the connection from plot to current connect index
 			int[] connection = new int[]{plot.index, connects[c].index};
@@ -481,7 +496,7 @@ public class DiggerGeneration : MonoBehaviour
 		}
 	}
 
-	NeighborData[] GetConnectionToBridge(PlotData plot)
+	NeighborData[] GetConnectionForBridge(PlotData plot)
 	{
 		//Create 4 empty connection
 		NeighborData[] connects = new NeighborData[4];
@@ -490,7 +505,7 @@ public class DiggerGeneration : MonoBehaviour
 		{
 			//Save the current neighbor
 			NeighborData neighbor = plot.neighbors[n];
-			//If this neighbour dig by given plot 
+			//If this neighbor dig by given plot 
 			if(neighbor.digByThis) 
 			{
 				//This connect will be given plot neighbor 
@@ -503,8 +518,6 @@ public class DiggerGeneration : MonoBehaviour
 			//? Randomize Bridging
 			//See if the plot neighbor and itself are already connect
 			bool alreadyConnect = false;
-			//Save the connection of plot and it neighbor
-			int[] connection = new int[]{neighbor.index, plot.index};
 			//Go through all the bridge
 			for (int b = 0; b < bridges.Count; b++)
 			{
@@ -513,9 +526,9 @@ public class DiggerGeneration : MonoBehaviour
 				//How many connection are the same as connected
 				int hasConnected = 0;
 				//@ Count how many connection of current bridge match the index of neighbor or plot
-				if(connection[0] == connected[0] || connection[1] == connected[0]) hasConnected++;
-				if(connection[0] == connected[1] || connection[1] == connected[1]) hasConnected++;
-				//Already connect when both connection match
+				if(neighbor.index == connected[0] || plot.index == connected[0]) hasConnected++;
+				if(neighbor.index == connected[1] || plot.index == connected[1]) hasConnected++;
+				// Already connect when both connected match
 				if(hasConnected == 2) alreadyConnect = true;
 			}
 			//The randomize result to bridge 
@@ -553,46 +566,173 @@ public class DiggerGeneration : MonoBehaviour
 
 	GameObject[] BuildRailing(GameObject bridge, int direction, int[] index)
 	{
-		//Create 2 empty gameobject to store railing
-		GameObject[] walls = new GameObject[2];
-		//Create 2 vector for wall position and scale
-		Vector2[] wallsPos = new Vector2[2]; Vector2[] wallScale = new Vector2[2];
+		//Return null if dont need to build railing
+		if(!builder.wall.enableRailing) {return null;}
+		//Create 2 null gameobject to store railing
+		GameObject[] walls = new GameObject[2]{null, null};
 		//Get the bridge position
 		Vector2 bridgePos = bridge.transform.position;
+		//Create 2 vector for wall position that using bridge position
+		Vector2[] wallsPos = new Vector2[2]{bridgePos, bridgePos}; 
+		//Create 2 empty vector for wall scale
+		Vector2[] wallScale = new Vector2[2];
 		//Get the thick of wall by master scaling
-		float thicked = MasterScaling("wall");
+		float wallThick = MasterScaling("wall");
 		//Get how far to place wall by increase half of bridge width with wall thick
-		float railingSpaced = (MasterScaling("bridge")/2) + (MasterScaling("wall")/2);
+		float railingSpaced = (MasterScaling("bridge")/2) + (wallThick/2);
 		//@ Set the wall position and scale in certain axis base on it horizontal or vertical
 		//The bridge are vertical
 		if(direction <= 1)
 		{
-			wallsPos[0]  = new Vector2(bridgePos.x + railingSpaced, bridgePos.y);
-			wallsPos[1]  = new Vector2(bridgePos.x - railingSpaced, bridgePos.y);
-			wallScale[0] = new Vector3(thicked, builder.spacing);
-			wallScale[1] = new Vector3(thicked, builder.spacing);
+			wallsPos[0].x += railingSpaced;
+			wallsPos[1].x -= railingSpaced;
+			wallScale[0] = new Vector3(wallThick, builder.spacing);
+			wallScale[1] = new Vector3(wallThick, builder.spacing);
 		}
 		//The bridge are horizontal
 		else
 		{
-			wallsPos[0]  = new Vector2(bridgePos.x, bridgePos.y + railingSpaced);
-			wallsPos[1]  = new Vector2(bridgePos.x, bridgePos.y - railingSpaced);
-			wallScale[0] = new Vector3(builder.spacing, thicked);
-			wallScale[1] = new Vector3(builder.spacing, thicked);
+			wallsPos[0].y += railingSpaced;
+			wallsPos[1].y -= railingSpaced;
+			wallScale[0] = new Vector3(builder.spacing, wallThick);
+			wallScale[1] = new Vector3(builder.spacing, wallThick);
 		}
 		//Go through 2 railing
 		for (int r = 0; r < 2; r++)
 		{
 			//Set the name for railing (X > Y Raling [R])
-			string name = index[0] + " > " + index[1] + " Railing ["+r+"]";
+			string naming = index[0] + " > " + index[1] + " Railing ["+r+"]";
 			//Create an wall at position and scale has get
-			walls[r] = CreateStructure(name, "wall", wallsPos[r], wallScale[r], 0);
+			walls[r] = CreateStructure(naming, "wall", wallsPos[r], wallScale[r]);
 		}
 		//Return railing has build
 		return walls;
 	}
+	#endregion
 
-	GameObject CreateStructure(string naming,string structure,Vector2 position,Vector2 scale,float rotation)
+	#region Floor
+	void BuildFloor(PlotData plot)
+	{
+		//Format an floor using given plot
+		GameObject floor = FormatFloor(plot);
+		//List the newly create floor with given plot index then build barrier at it
+		ListingFloor(plot.index, floor, BuildBarrier(plot));
+	}
+
+	GameObject FormatFloor(PlotData plot)
+	{
+		//Get the master scaling of floor
+		Vector2 scale = new Vector2(MasterScaling("floor"), MasterScaling("floor"));
+		//Set the name for floor (X Floor)
+		string naming = plot.index + " Floor";
+		//Return created floor with name, scale has got and at given plot position
+		return CreateStructure(naming, "floor", plot.position, scale);
+	}
+
+	List<GameObject> BuildBarrier(PlotData plot)
+	{
+		//Return null if dont need to build barrier
+		if(!builder.wall.enableBarrier) {return null;}
+		//Empty list of gameobject for barrier
+		List<GameObject> barriers = new List<GameObject>();
+		//Go through all the neighbor of given plot
+		for (int n = 0; n < 4; n++)
+		{
+			//Get this plot neighbor
+			NeighborData neighbor = plot.neighbors[n];
+			//If neighbor dont has bridge
+			if(!neighbor.hasBridge)
+			{
+				//If neighbor haven't got dig
+				if(!neighbor.digged)
+				{
+					//Format an barrier for given plot in this neighbor then list them
+					barriers.Add(FormatBarrier(plot, n));
+				}
+				//If the neighbor has got dig while using room mode
+				else if(builder.floor.wallMode == Builder.Floor.WallMode.room)
+				{
+					//Format an barrier for given plot in this neighbor then list them
+					barriers.Add(FormatBarrier(plot, n));
+				}
+			}
+			//If neighbor has bridge
+			else
+			{
+				//Get gate length by half deceased floor scale and bridge that got increase with wall thick
+				float gateLength = ((MasterScaling("floor")-MasterScaling("bridge"))/2) + MasterScaling("wall");
+				//For each side of this neighbor
+				for (int s = 0; s < 2; s++)
+				{
+					//Format an barrier for given plot in this direction with gate length
+					GameObject barrier = FormatBarrier(plot, n, gateLength);
+					//Format the created barrier for given plot in this neighbor and side to be an gate
+					barriers.Add(FormatGate(barrier, plot, n, s));
+				}
+			}
+		}
+		//Return all the barrier has created
+		return barriers;
+	}
+
+	GameObject FormatBarrier(PlotData plot, int direction, float customLength = -1)
+	{
+		Vector2 position = plot.position;
+		Vector2 scale = new Vector2();
+		float wallThick = MasterScaling("wall");
+		float floorScale = MasterScaling("floor");
+		//If barrier length are not custom
+		float barrierLength; if(customLength == -1)
+		{
+			//Set length for barrier by incease floor scale with double wall thick
+			barrierLength  = floorScale + (wallThick*2);
+		}
+		//If barrier length are custom
+		else
+		{
+			//Then use custom length for barrier
+			barrierLength = customLength;
+		}
+		//Get barrier spacing by use half of combined floor scale and wall thick
+		float barrierSpaced = (floorScale + wallThick)/2;
+		//What is given direction
+		switch(direction)
+		{
+			//@ Set the axis to spacing and scale depend on given direction
+			case 0: position.y += barrierSpaced; scale = new Vector2(barrierLength, wallThick); break;
+			case 1: position.y -= barrierSpaced; scale = new Vector2(barrierLength, wallThick); break;
+			case 2: position.x -= barrierSpaced; scale = new Vector2(wallThick, barrierLength); break;
+			case 3: position.x += barrierSpaced; scale = new Vector2(wallThick, barrierLength); break;
+		}
+		//Set the name for barrier (X Barrier [D])
+		string naming = plot.index + " Barrier " + "["+direction+"]";
+		//Return the created wall that use getted name, position and scale as barrier
+		return CreateStructure(naming, "wall", position, scale);
+	}
+
+	GameObject FormatGate(GameObject gate, PlotData plot, int direction, int side)
+	{
+		float floorScale = MasterScaling("floor"); 
+		float wallThick = MasterScaling("wall"); 
+		float bridgeWidth = MasterScaling("bridge");
+		//Overwrite the name or gate formated (X Gate [D] [S])
+		gate.name = plot.index + " Gate " + "["+direction+"] " +"["+side+"]";
+		//Align by quater of combined floor scale with bridge width then increase with half of wall thick
+		float align = (floorScale + bridgeWidth)/4 + wallThick/2;
+		//Create an empty vector for align position
+		Vector3 alignPosition = Vector3.zero;
+		//If direction in vertical then align the X axis base on it given side
+		if(direction <= 1) {if(side == 0) {alignPosition.x = align;} if(side == 1) {alignPosition.x = -align;}}
+		//If direction in horizonal then align the Y axis base on it given side
+		if(direction >= 2) {if(side == 0) {alignPosition.y = align;} if(side == 1) {alignPosition.y = -align;}}
+		//Align gate position
+		gate.transform.position += alignPosition;
+		//Return the gate has align
+		return gate;
+	}
+	#endregion
+
+	GameObject CreateStructure(string naming,string structure,Vector2 position,Vector2 scale,float rotation=0)
 	{
 		//An empty prefab and grouper to use
 		GameObject prefab = null; GameObject grouper = null; 
