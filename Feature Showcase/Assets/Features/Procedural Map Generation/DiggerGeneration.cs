@@ -48,8 +48,8 @@ public class DiggerGeneration : MonoBehaviour
 		public Floor floor; [Serializable] public class Floor
 		{
 			public bool enable;
-			[Tooltip("Room: Create wall in all direction unless there is bridge then create an gate\nLand: Only create wall when there no floor in that direction")]
-			public WallMode wallMode; public enum WallMode {room, land}
+			[Tooltip("Will floor create an barrier or gate when there neighbor next to it?")]
+			public bool barricadeNeighbor;
 			public GameObject prefab;
 			public float size;
 			public Color color;
@@ -580,22 +580,26 @@ public class DiggerGeneration : MonoBehaviour
 		float wallThick = MasterScaling("wall");
 		//Get how far to place wall by increase half of bridge width with wall thick
 		float railingSpaced = (MasterScaling("bridge")/2) + (wallThick/2);
+		//Get railing as length as custom wall length
+		float railingLength = builder.wall.length;
+		//Increase railing with spacing if enable auto scale
+		if(builder.autoScale) {railingLength += builder.spacing;}
 		//@ Set the wall position and scale in certain axis base on it horizontal or vertical
 		//The bridge are vertical
 		if(direction <= 1)
 		{
 			wallsPos[0].x += railingSpaced;
 			wallsPos[1].x -= railingSpaced;
-			wallScale[0] = new Vector3(wallThick, builder.spacing);
-			wallScale[1] = new Vector3(wallThick, builder.spacing);
+			wallScale[0] = new Vector3(wallThick, railingLength);
+			wallScale[1] = new Vector3(wallThick, railingLength);
 		}
 		//The bridge are horizontal
 		else
 		{
 			wallsPos[0].y += railingSpaced;
 			wallsPos[1].y -= railingSpaced;
-			wallScale[0] = new Vector3(builder.spacing, wallThick);
-			wallScale[1] = new Vector3(builder.spacing, wallThick);
+			wallScale[0] = new Vector3(railingLength, wallThick);
+			wallScale[1] = new Vector3(railingLength, wallThick);
 		}
 		//Go through 2 railing
 		for (int r = 0; r < 2; r++)
@@ -613,20 +617,14 @@ public class DiggerGeneration : MonoBehaviour
 	#region Floor
 	void BuildFloor(PlotData plot)
 	{
-		//Format an floor using given plot
-		GameObject floor = FormatFloor(plot);
-		//List the newly create floor with given plot index then build barrier at it
-		ListingFloor(plot.index, floor, BuildBarrier(plot));
-	}
-
-	GameObject FormatFloor(PlotData plot)
-	{
 		//Get the master scaling of floor
 		Vector2 scale = new Vector2(MasterScaling("floor"), MasterScaling("floor"));
 		//Set the name for floor (X Floor)
 		string naming = plot.index + " Floor";
-		//Return created floor with name, scale has got and at given plot position
-		return CreateStructure(naming, "floor", plot.position, scale);
+		//Createan floor with name, scale has got and at given plot position
+		GameObject floor = CreateStructure(naming, "floor", plot.position, scale);
+		//List the newly create floor with given plot index then build barrier at it
+		ListingFloor(plot.index, floor, BuildBarrier(plot));
 	}
 
 	List<GameObject> BuildBarrier(PlotData plot)
@@ -643,22 +641,16 @@ public class DiggerGeneration : MonoBehaviour
 			//If neighbor dont has bridge
 			if(!neighbor.hasBridge)
 			{
-				//If neighbor haven't got dig
-				if(!neighbor.digged)
-				{
-					//Format an barrier for given plot in this neighbor then list them
-					barriers.Add(FormatBarrier(plot, n));
-				}
-				//If the neighbor has got dig while using room mode
-				else if(builder.floor.wallMode == Builder.Floor.WallMode.room)
-				{
-					//Format an barrier for given plot in this neighbor then list them
-					barriers.Add(FormatBarrier(plot, n));
-				}
+				//Format an barrier for given plot in this neighbor then list them
+				GameObject barrier = FormatBarrier(plot, n);
+				//Add barrier to it list data if it exist
+				if(barrier != null) barriers.Add(barrier);
 			}
 			//If neighbor has bridge
 			else
 			{
+				//Skip if not need to barricade gate in this neighbor
+				if(!builder.floor.barricadeNeighbor) continue;
 				//Get gate length by half deceased floor scale and bridge that got increase with wall thick
 				float gateLength = ((MasterScaling("floor")-MasterScaling("bridge"))/2) + MasterScaling("wall");
 				//For each side of this neighbor
@@ -675,24 +667,43 @@ public class DiggerGeneration : MonoBehaviour
 		return barriers;
 	}
 
-	GameObject FormatBarrier(PlotData plot, int direction, float customLength = -1)
+	GameObject FormatBarrier(PlotData plot, int direction, float gateLength = -1)
 	{
+		//Don't barricade neighbor in this direction if it has dig when no need to barricade
+		if(plot.neighbors[direction].digged && !builder.floor.barricadeNeighbor) return null;
 		Vector2 position = plot.position;
 		Vector2 scale = new Vector2();
+		float barrierLength = 0;
 		float wallThick = MasterScaling("wall");
 		float floorScale = MasterScaling("floor");
-		//If barrier length are not custom
-		float barrierLength; if(customLength == -1)
+		//If enable auto scale
+		if(builder.autoScale)
 		{
-			//Set length for barrier by incease floor scale with double wall thick
-			barrierLength  = floorScale + (wallThick*2);
+			//Set length for barrier by incease floor scale with double wall thick 
+			barrierLength = floorScale + (wallThick*2);
+			//? Fixing wall position and scale when neighbor got dig but don't barricade
+			if(!builder.floor.barricadeNeighbor) for (int n = 0; n < 4; n++)
+			{
+				//Skip neighbor in this direction if currently build barrier for it or has dig
+				if(n == direction || !plot.neighbors[n].digged) continue;
+				//If this barrier direction are VERTICAL
+				if(direction <= 1)
+				{
+					if(n == 2) {position.x += wallThick/2; barrierLength -= wallThick;}
+					if(n == 3) {position.x -= wallThick/2; barrierLength -= wallThick;}
+				}
+				//If this barrier direction are HORIZONTAL
+				if(direction >= 2)
+				{
+					if(n == 0) {position.y -= wallThick/2; barrierLength -= wallThick;}
+					if(n == 1) {position.y += wallThick/2; barrierLength -= wallThick;}
+				}
+			}
 		}
-		//If barrier length are custom
-		else
-		{
-			//Then use custom length for barrier
-			barrierLength = customLength;
-		}
+		//Overwrite barrier length to given gate length if given not -1
+		if(gateLength >= 0) {barrierLength = gateLength;}
+		//Modify barrier length will custom wall length
+		barrierLength += builder.wall.length;
 		//Get barrier spacing by use half of combined floor scale and wall thick
 		float barrierSpaced = (floorScale + wallThick)/2;
 		//What is given direction
