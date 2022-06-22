@@ -2,12 +2,9 @@ using System.Collections.Generic;
 using System.Collections;
 using UnityEngine;
 using System;
-#pragma warning disable ///! FOR NOW
 
 public class DiggerGeneration : MonoBehaviour
 {
-	public bool autoGenerate; public float autoDelay;
-	[Header("- Settings -")]
 	[Tooltip("The amount of plot will need to dig")]
 	public int amount;
 	[Tooltip("The position to begin dig")]
@@ -425,10 +422,10 @@ public class DiggerGeneration : MonoBehaviour
 		//@ Return the master scaled value of needed structure scaling
 		switch(structure)
 		{
-			case "draft" : return builder.draft.size   * ms; break;
-			case "floor" : return builder.floor.size   * ms; break;
-			case "bridge": return builder.bridge.width * ms; break;
-			case "wall"  : return builder.wall.thick   * ms; break;
+			case "draft" : return builder.draft.size   * ms;
+			case "floor" : return builder.floor.size   * ms;
+			case "bridge": return builder.bridge.width * ms;
+			case "wall"  : return builder.wall.thick   * ms;
 		}
 		//Send an error if there no structure that needed
 		Debug.LogError("There no '"+structure+"' structure"); return -1;
@@ -681,7 +678,7 @@ public class DiggerGeneration : MonoBehaviour
 		{
 			//Set length for barrier by incease floor scale with double wall thick 
 			barrierLength = floorScale + (wallThick*2);
-			//? Fixing wall position and scale when neighbor got dig but don't barricade
+			//? Fixing wall poking into floor when not barricade neighbour
 			if(!builder.floor.barricadeNeighbor) for (int n = 0; n < 4; n++)
 			{
 				//Skip neighbor in this direction if currently build barrier for it or has dig
@@ -689,13 +686,17 @@ public class DiggerGeneration : MonoBehaviour
 				//If this barrier direction are VERTICAL
 				if(direction <= 1)
 				{
+					//If direction are LEFT cut off barrier length then move RIGHT
 					if(n == 2) {position.x += wallThick/2; barrierLength -= wallThick;}
+					//If direction are RIGHT cut off barrier length then moveLEFT
 					if(n == 3) {position.x -= wallThick/2; barrierLength -= wallThick;}
 				}
 				//If this barrier direction are HORIZONTAL
 				if(direction >= 2)
 				{
+					//If direction are UP cut off barrier length then move DOWN
 					if(n == 0) {position.y -= wallThick/2; barrierLength -= wallThick;}
+					//If direction are DOWN cut off barrier length then movE UP
 					if(n == 1) {position.y += wallThick/2; barrierLength -= wallThick;}
 				}
 			}

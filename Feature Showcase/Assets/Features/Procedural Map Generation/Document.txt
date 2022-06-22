@@ -31,3 +31,22 @@
 			> Buid "bridge" using format info.
 			> Create "railing" at bridge position modify with half of bridge width and wall thick.
 			> "Railing" modify and scale are base on direction of bridge it create.
+
+		+ Building Floor:
+			> Create "floor" object on each "plot".
+			> Check through each "plot" "neighbor" to create "barrier".
+			> Create "barrier" when there is not an "neighbor".
+			? Create "barrier" when there is an "neighbor".
+			> If "neighbor" have "bridge".
+			> Beign build "barrier" that act as "gate"
+			> Align "gate" to be middle between "bridge" edge and "floor" edge on each side.
+			? If an "barrier" poke into floor (when not barricade "neighbor"):
+				> Cut the part that poke in
+				> Move it in the opposite direction it poke.
+
+	Limit: ( (X) important)
+		- (1) Only support square floor.
+		- (8) wall work with an single stretch object.
+		- (4) Auto scale don't affect gate.
+		- (5) Can't edit barrier and railing length individual.
+		- (6) Land mode could cause wall clip in each other if place diagonal.
