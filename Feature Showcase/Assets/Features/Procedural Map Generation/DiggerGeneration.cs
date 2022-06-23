@@ -45,8 +45,6 @@ public class DiggerGeneration : MonoBehaviour
 		public Floor floor; [Serializable] public class Floor
 		{
 			public bool enable;
-			[Tooltip("Will floor create an barrier or gate when there neighbor next to it?")]
-			public bool barricadeNeighbor;
 			public GameObject prefab;
 			public float size;
 			public Color color;
@@ -64,7 +62,10 @@ public class DiggerGeneration : MonoBehaviour
 		}
 		public Wall wall; [Serializable] public class Wall
 		{
-			public bool enableBarrier, enableRailing;
+			public bool enableBarrier;
+			public bool enableRailing;
+			[Tooltip("Will floor create an barrier or gate when there neighbor next to it?")]
+			public bool barricadeNeighbor;
 			public GameObject prefab;
 			public float thick, length;
 			public Color color;
@@ -122,16 +123,6 @@ public class DiggerGeneration : MonoBehaviour
 	}
 	#endregion
 #endregion
-
-	void Update() 
-	{
-		//% DIG when pressed SPACE
-		if(Input.GetKey(KeyCode.Space)) Dig();
-		//% LOAD THIS SCENE when pressed R
-		if(Input.GetKeyDown(KeyCode.R)) UnityEngine.SceneManagement.SceneManager.LoadScene(3, UnityEngine.SceneManagement.LoadSceneMode.Single);
-		//% Clear generation when pressed X
-		if(Input.GetKeyDown(KeyCode.X)) ClearGeneration(false, true);
-	}
 
 #region Generation
 	public void Dig(bool overwrite = false)
@@ -647,7 +638,7 @@ public class DiggerGeneration : MonoBehaviour
 			else
 			{
 				//Skip if not need to barricade gate in this neighbor
-				if(!builder.floor.barricadeNeighbor) continue;
+				if(!builder.wall.barricadeNeighbor) continue;
 				//Get gate length by half deceased floor scale and bridge that got increase with wall thick
 				float gateLength = ((MasterScaling("floor")-MasterScaling("bridge"))/2) + MasterScaling("wall");
 				//For each side of this neighbor
@@ -667,7 +658,7 @@ public class DiggerGeneration : MonoBehaviour
 	GameObject FormatBarrier(PlotData plot, int direction, float gateLength = -1)
 	{
 		//Don't barricade neighbor in this direction if it has dig when no need to barricade
-		if(plot.neighbors[direction].digged && !builder.floor.barricadeNeighbor) return null;
+		if(plot.neighbors[direction].digged && !builder.wall.barricadeNeighbor) return null;
 		Vector2 position = plot.position;
 		Vector2 scale = new Vector2();
 		float barrierLength = 0;
@@ -679,7 +670,7 @@ public class DiggerGeneration : MonoBehaviour
 			//Set length for barrier by incease floor scale with double wall thick 
 			barrierLength = floorScale + (wallThick*2);
 			//? Fixing wall poking into floor when not barricade neighbour
-			if(!builder.floor.barricadeNeighbor) for (int n = 0; n < 4; n++)
+			if(!builder.wall.barricadeNeighbor) for (int n = 0; n < 4; n++)
 			{
 				//Skip neighbor in this direction if currently build barrier for it or has dig
 				if(n == direction || !plot.neighbors[n].digged) continue;
@@ -743,6 +734,7 @@ public class DiggerGeneration : MonoBehaviour
 		return gate;
 	}
 	#endregion
+
 
 	GameObject CreateStructure(string naming,string structure,Vector2 position,Vector2 scale,float rotation=0)
 	{
