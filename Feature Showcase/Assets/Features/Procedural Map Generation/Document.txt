@@ -1,13 +1,43 @@
+(+ Function | > Action | "" Variable | ? Possible | $ Condition | ... Description | @ Contain)
+# General:
+	+ Class:
+		+ "PlotData":
+			... Main variable of an "plot".
+			@ Index it on.
+			@ It grid coordinate.
+			@ It world position.
+			@ It is empty | fill.
+		+ "PlotNeighbor":
+			@ Everything inside "PlotData".
+			@ Array of 4 "PlotData" as neighbor.
+
 # Digger:
-	Process: (+ Process | > Action | "" Variable | ? Possible | $ Condition)
-		+ Set Plot:
+	Setup:
+		+ "Config":
+			... The group of variables that will send to process for dig.
+			@ Amount of plot needed.
+			@ The position it will begin to dig.
+			@ The chance for miner to dig in ANY|EACH direction.
+			@ The minimum amount and maximum amount allow for miner to dig in direction.
+			@ The list of plot has been dig ("DigPlot").
+			@ The list of miner currently dig ("DigPlot").
+		+ "DigPlot":
+			... The group of variables contain data use to dig.
+			@ Everything inside "PlotData" + "PlotNeighbor".
+			@ The time it dig as miner.
+			@ The available direction for miner to dig.
+			@ The direction it has use to bypass.
+		> When need to dig send "Config" to process that handle digging.
+			
+	Process: 
+		+ Create Plot:
 			> The "plot" that handle digging an new "plot" will know as "miner".
 			> The "miner" will decide an random direction to dig an new "plot".
 			> The newly dig "plot" will be know as the new "miner"...
 			? If during dig the following condition meet:
-				$ All 4 direction of "miner" are digged. 
+				$ All 4 direction of "miner" are fill. 
 				$ Still need more "plot".
-				> Choose an random direction and bypass them until no longer on digged "plot".
+				> Choose an random direction and bypass them until no longer on fill "plot".
 				> Set "miner" from there...
 
 		+ Decide Neighbor:
@@ -15,9 +45,9 @@
 			> Each "neighbor" will has "digByThis" and "hasDig":
 				digByThis = This "neighbor" has been dig by this "plot".
 				hasDig    = This "neighbor" has been dig.
-			> When an "miner" digged an new "plot" it will mark that newly dig as "digByThis" in it "neighbor".
+			> When an "miner" during an new "plot" it will mark that newly dig as "digByThis" in it "neighbor".
 			> Go through all the "plot" to check 4 direction of that "plot".
-			> If there is digged "plot" in that direction then mark it as "hasDig" in it "neighbor".
+			> If there is dug "plot" in that direction then mark it as "hasDig" in it "neighbor".
 			> When check "neighbor" the "plot" will also store that "neighbor" important data.
 
 		+ Building Bridge:
