@@ -1,10 +1,35 @@
 using System.Collections.Generic;
+using ProceduralMapGeneration;
 using System.Collections;
 using UnityEngine;
 using System;
 
 public class DiggerGeneration : MonoBehaviour
 {
+	[Serializable] public class DiggerConfig
+	{
+		[Tooltip("The amount of plot will need to dig")]
+		public int amount;
+		[Tooltip("The position to begin dig")]
+		public Vector2 startPosition;
+		[Tooltip("The chance for miner to dig an new plot from 0 to 100")][Range(0,100)]
+		public float digChance;
+		[Tooltip(" Allow to has specific chance for each direction")]
+		public DirectionalChance directionalChance; [Serializable] public class DirectionalChance 
+		{
+			public bool use; 
+			[Range(0,100)] public float up,down,left,right;
+		}
+
+		[Tooltip("The constraint for the miner when dig")]
+		public MiningRequirement digRequirement; [Serializable] public class MiningRequirement
+		{
+			[Range(1,4)] [Tooltip("The maximum amount of plot the miner allow to dig")]
+			public int maximum = 1;
+			[Range(0,4)][Tooltip("The minimum amount of plot the miner need to dig")]
+			public int minimum;
+		}
+	}
 	[Tooltip("The amount of plot will need to dig")]
 	public int amount;
 	[Tooltip("The position to begin dig")]
