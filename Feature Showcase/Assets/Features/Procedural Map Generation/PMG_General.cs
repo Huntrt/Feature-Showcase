@@ -1,18 +1,29 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using System;
 
-public class PMG_General : MonoBehaviour
+namespace ProceduralMapGeneration
 {
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
+	[Serializable] public class PlotData
+	{
+		public Vector2 coordinate;
+		public Vector2 position;
+		public bool empty = true;
+	} 
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+	[Serializable] public class PlotWithNeighbors
+	{
+		public int emptyNeighbor = 4;
+		public PlotData[] neighbors = new PlotData[4]
+		{
+			new PlotData(),
+			new PlotData(),
+			new PlotData(),
+			new PlotData()
+		};
+	} 
+
+	public static class PMG_General
+	{
+		
+	}
 }

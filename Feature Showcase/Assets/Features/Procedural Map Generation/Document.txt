@@ -3,12 +3,12 @@
 	+ Class:
 		+ "PlotData":
 			... Main variable of an "plot".
-			@ Index it on.
 			@ It grid coordinate.
 			@ It world position.
 			@ It is empty | fill.
 		+ "PlotNeighbor":
 			@ Everything inside "PlotData".
+			@ How many neighbor are empty?
 			@ Array of 4 "PlotData" as neighbor.
 
 # Digger:
