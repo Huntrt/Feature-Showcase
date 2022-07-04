@@ -2,7 +2,7 @@ using UnityEngine.UI;
 using UnityEngine;
 using TMPro;
 
-public class Dg_GUI : MonoBehaviour
+public class DA_GUI : MonoBehaviour
 {
     public TextMeshProUGUI plotCounter;
 	public TMP_InputField amountSetter;
