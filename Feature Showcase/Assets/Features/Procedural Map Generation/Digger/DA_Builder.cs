@@ -1,18 +1,12 @@
-using System.Collections;
+using ProceduralMapGeneration.Digger;
 using System.Collections.Generic;
+using System.Collections;
 using UnityEngine;
 
+namespace ProceduralMapGeneration.Digger
+{
 public class DA_Builder : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+	public DiggerConfig diggerConfig;
 }
+} //? Close namespace

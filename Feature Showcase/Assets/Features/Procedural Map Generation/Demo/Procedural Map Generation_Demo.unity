@@ -132,6 +132,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 10730502}
+  - component: {fileID: 10730503}
   - component: {fileID: 10730501}
   m_Layer: 0
   m_Name: Digger Generator
@@ -149,65 +150,47 @@ MonoBehaviour:
   m_GameObject: {fileID: 10730500}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7cb0e625512b0df4cbb42051eddac8c7, type: 3}
+  m_Script: {fileID: 11500000, guid: bec202c606fc70b4eb49bf1b702dfc84, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  amount: 100
-  startPosition: {x: 0, y: 0}
-  digChance: 50
-  directionalChance:
-    use: 0
-    up: 0
-    down: 0
-    left: 0
-    right: 0
-  digRequirement:
-    maximum: 2
-    minimum: 0
   builder:
-    spacing: 0.1
-    masterScale: 0.2
-    autoScale: 1
+    spacing: 0
+    masterScale: 0
+    autoScale: 0
     draft:
-      enable: 1
-      clearAfterDig: 1
-      prefab: {fileID: 4558046587480059573, guid: ca4eee04cfe5b634a999274ded4b3a65,
-        type: 3}
-      size: 1
-      digged: {r: 0.05, g: 0.05, b: 0.05, a: 1}
-      miner: {r: 0.3, g: 1, b: 0.41666657, a: 1}
-      stuck: {r: 1, g: 0.39999998, b: 0.39999998, a: 1}
-      bypassed: {r: 0.4, g: 0.2, b: 0.2, a: 1}
-      over: {r: 0.060392167, g: 0.2, b: 0.083137274, a: 1}
+      enable: 0
+      clearAfterDig: 0
+      prefab: {fileID: 0}
+      size: 0
+      digged: {r: 0, g: 0, b: 0, a: 0}
+      miner: {r: 0, g: 0, b: 0, a: 0}
+      stuck: {r: 0, g: 0, b: 0, a: 0}
+      bypassed: {r: 0, g: 0, b: 0, a: 0}
+      over: {r: 0, g: 0, b: 0, a: 0}
       grouper: {fileID: 0}
     floor:
-      enable: 1
-      prefab: {fileID: 4558046587480059573, guid: 8d8064d8785e0af489b41e27b7d2504a,
-        type: 3}
-      size: 1
-      color: {r: 0.1, g: 0.1, b: 0.1, a: 1}
+      enable: 0
+      prefab: {fileID: 0}
+      size: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
       grouper: {fileID: 0}
     bridge:
-      enable: 1
-      bridgeChance: 100
-      prefab: {fileID: 4558046587480059573, guid: 2b9a5244ee456d0479c6b65170c38269,
-        type: 3}
-      width: 0.3
+      enable: 0
+      bridgeChance: 0
+      prefab: {fileID: 0}
+      width: 0
       length: 0
-      color: {r: 0.10196079, g: 0.10196079, b: 0.10196079, a: 1}
+      color: {r: 0, g: 0, b: 0, a: 0}
       grouper: {fileID: 0}
     wall:
-      enableBarrier: 1
-      enableRailing: 1
-      barricadeNeighbor: 1
-      prefab: {fileID: 4558046587480059573, guid: 4d71913f6a425e641909cd8e3872aa59,
-        type: 3}
-      thick: 0.1
+      enableBarrier: 0
+      enableRailing: 0
+      barricadeNeighbor: 0
+      prefab: {fileID: 0}
+      thick: 0
       length: 0
-      color: {r: 1, g: 1, b: 1, a: 0.5019608}
+      color: {r: 0, g: 0, b: 0, a: 0}
       grouper: {fileID: 0}
-  plots: []
-  miners: []
   drafts: []
   floors: []
   bridges: []
@@ -227,6 +210,34 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &10730503
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 10730500}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96555b9766bb0a044af96ae5d470ed33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  diggerConfig:
+    amount: 0
+    startPosition: {x: 0, y: 0}
+    digChance: 0
+    directionalChance:
+      use: 0
+      up: 0
+      down: 0
+      left: 0
+      right: 0
+    digRequirement:
+      maximum: 1
+      minimum: 0
+    isDigging: 0
+    dugs: []
+    miners: []
 --- !u!1 &11310626
 GameObject:
   m_ObjectHideFlags: 0
@@ -1083,7 +1094,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 10730501}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: DiggerGeneration, Assembly-CSharp
         m_MethodName: Dig
         m_Mode: 6
@@ -1562,12 +1573,27 @@ MonoBehaviour:
   m_GameObject: {fileID: 886393348}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9287cbe8b41d2a84baa1d34ce9a82a1d, type: 3}
+  m_Script: {fileID: 11500000, guid: f1e1d9bb03af5ab4d8365355805984ba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   plotCounter: {fileID: 1920777087}
   amountSetter: {fileID: 265583008}
-  dg: {fileID: 10730501}
+  config:
+    amount: 0
+    startPosition: {x: 0, y: 0}
+    digChance: 0
+    directionalChance:
+      use: 0
+      up: 0
+      down: 0
+      left: 0
+      right: 0
+    digRequirement:
+      maximum: 1
+      minimum: 0
+    isDigging: 0
+    dugs: []
+    miners: []
 --- !u!1 &922208915
 GameObject:
   m_ObjectHideFlags: 0
