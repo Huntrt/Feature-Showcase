@@ -4,7 +4,7 @@ using System.Collections;
 using UnityEngine;
 using System;
 
-public class DiggerGeneration : MonoBehaviour
+namespace ProceduralMapGeneration.Digger
 {
 	[Serializable] public class DiggerConfig
 	{
@@ -30,6 +30,9 @@ public class DiggerGeneration : MonoBehaviour
 			public int minimum;
 		}
 	}
+
+public class DiggerAlgorithm : MonoBehaviour
+{
 	[Tooltip("The amount of plot will need to dig")]
 	public int amount;
 	[Tooltip("The position to begin dig")]
@@ -861,3 +864,4 @@ public class DiggerGeneration : MonoBehaviour
 	}
 #endregion
 }
+} //? namespace close

@@ -6,7 +6,7 @@ public class Dg_GUI : MonoBehaviour
 {
     public TextMeshProUGUI plotCounter;
 	public TMP_InputField amountSetter;
-	public DiggerGeneration dg;
+	public ProceduralMapGeneration.Digger.DiggerAlgorithm dg;
 
 	void Start()
 	{
