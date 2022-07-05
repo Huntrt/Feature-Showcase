@@ -7,6 +7,9 @@ namespace ProceduralMapGeneration.Digger
 {
 public class DiggerAlgorithm : MonoBehaviour
 {
+	//Set this class to singleton
+	public static DiggerAlgorithm i {get{if(_i==null){_i = GameObject.FindObjectOfType<DiggerAlgorithm>();}return _i;}} static DiggerAlgorithm _i;
+
 #region Generation
 
 	/// Begin recursive dig with config class given
