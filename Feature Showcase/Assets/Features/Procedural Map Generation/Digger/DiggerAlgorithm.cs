@@ -7,48 +7,6 @@ using System;
 
 namespace ProceduralMapGeneration.Digger
 {
-	[Serializable] public class DiggerConfig
-	{
-		[Tooltip("The amount of plot will need to dig")]
-		public int amount;
-		[Tooltip("The position to begin dig")]
-		public Vector2 startPosition;
-		[Tooltip("The world position spacing between each plot")]
-		public float spacing;
-		[Header("---- Mining ----")]
-		[Tooltip("The percent chance for miner to dig an new plot in any direction")][Range(0,100)]
-		public float digChance;
-		[Tooltip("Allow to has specific chance for each direction")]
-		public DirectionalChance directionalChance; [Serializable] public class DirectionalChance 
-		{
-			public bool use; [Range(0,100)] public float up,down,left,right;
-		}
-		[Tooltip("The constraint for the miner when dig")]
-		public MiningRequirement digRequirement; [Serializable] public class MiningRequirement
-		{
-			[Range(1,4)] public int maximum = 1; [Range(0,4)] public int minimum;
-		}
-		[HideInInspector] public bool isDigging; public Action digCompleted;
-		[Header("---- List ----")]
-		public List<DigPlot> dugs = new List<DigPlot>();
-		public List<DigPlot> miners = new List<DigPlot>();
-	}
-
-	[Serializable] public class DigPlot : PlotData
-	{
-		[Serializable] public class Neighbor : PlotData {public bool digbyThis, hasBridge;}
-		public Neighbor[] neighbors = new Neighbor[4]
-		{
-			new Neighbor(),
-			new Neighbor(),
-			new Neighbor(),
-			new Neighbor()
-		};
-		public int emptyNeighbor = 4, digCount;
-		[HideInInspector] public int bypassedDirection = -1;
-		[HideInInspector] public List<int> availableDirection = new List<int>{0,1,2,3};
-	}
-
 public class DiggerAlgorithm : MonoBehaviour
 {
 
