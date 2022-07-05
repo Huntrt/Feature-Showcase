@@ -153,48 +153,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bec202c606fc70b4eb49bf1b702dfc84, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  builder:
-    spacing: 0
-    masterScale: 0
-    autoScale: 0
-    draft:
-      enable: 0
-      clearAfterDig: 0
-      prefab: {fileID: 0}
-      size: 0
-      digged: {r: 0, g: 0, b: 0, a: 0}
-      miner: {r: 0, g: 0, b: 0, a: 0}
-      stuck: {r: 0, g: 0, b: 0, a: 0}
-      bypassed: {r: 0, g: 0, b: 0, a: 0}
-      over: {r: 0, g: 0, b: 0, a: 0}
-      grouper: {fileID: 0}
-    floor:
-      enable: 0
-      prefab: {fileID: 0}
-      size: 0
-      color: {r: 0, g: 0, b: 0, a: 0}
-      grouper: {fileID: 0}
-    bridge:
-      enable: 0
-      bridgeChance: 0
-      prefab: {fileID: 0}
-      width: 0
-      length: 0
-      color: {r: 0, g: 0, b: 0, a: 0}
-      grouper: {fileID: 0}
-    wall:
-      enableBarrier: 0
-      enableRailing: 0
-      barricadeNeighbor: 0
-      prefab: {fileID: 0}
-      thick: 0
-      length: 0
-      color: {r: 0, g: 0, b: 0, a: 0}
-      grouper: {fileID: 0}
-  drafts: []
-  floors: []
-  bridges: []
-  generating: 0
 --- !u!4 &10730502
 Transform:
   m_ObjectHideFlags: 0
@@ -224,17 +182,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   diggerConfig:
     amount: 0
+    spacing: 0
     startPosition: {x: 0, y: 0}
-    digChance: 0
-    directionalChance:
-      use: 0
+    digChance:
+      generalChance: 50
+      useDirectionChance: 0
       up: 0
       down: 0
       left: 0
       right: 0
-    digRequirement:
-      maximum: 1
+    miningConstraint:
       minimum: 0
+      maximum: 1
     isDigging: 0
     dugs: []
     miners: []
@@ -1578,22 +1537,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   plotCounter: {fileID: 1920777087}
   amountSetter: {fileID: 265583008}
-  config:
-    amount: 0
-    startPosition: {x: 0, y: 0}
-    digChance: 0
-    directionalChance:
-      use: 0
-      up: 0
-      down: 0
-      left: 0
-      right: 0
-    digRequirement:
-      maximum: 1
-      minimum: 0
-    isDigging: 0
-    dugs: []
-    miners: []
+  builder: {fileID: 0}
 --- !u!1 &922208915
 GameObject:
   m_ObjectHideFlags: 0
