@@ -7,58 +7,6 @@ namespace ProceduralMapGeneration.Digger
 {
 public class DiggerAlgorithm : MonoBehaviour
 {
-	[Serializable] public class Builder
-	{
-		public float spacing; 
-		[Tooltip("All structure size will multiply with this scale")] 
-		public float masterScale;
-		[Tooltip("The following will be change:\n- Bridge length will be scale with spacing\n- Wall will be scale wih bridge and wall size\n- Value that got auto scale will now use to modify")]
-		public bool autoScale;
-		public Floor floor; [Serializable] public class Floor
-		{
-			public bool enable;
-			public GameObject prefab;
-			public float size;
-			public Color color;
-			[HideInInspector] public GameObject grouper;
-		}
-		public Bridge bridge; [Serializable] public class Bridge
-		{
-			public bool enable;
-			[Tooltip("The chance for plot to bridge more than 1 neighbor")][Range(0,100)]
-			public float bridgeChance;
-			public GameObject prefab;
-			public float width, length;
-			public Color color;
-			[HideInInspector] public GameObject grouper;
-		}
-		public Wall wall; [Serializable] public class Wall
-		{
-			public bool enableBarrier;
-			public bool enableRailing;
-			[Tooltip("Will floor create an barrier or gate when there neighbor next to it?")]
-			public bool barricadeNeighbor;
-			public GameObject prefab;
-			public float thick, length;
-			public Color color;
-			[HideInInspector] public GameObject grouper;
-		}
-	}
-
-	[Serializable] public class FloorData
-	{
-		public int plotIndex;
-		public GameObject obj; public SpriteRenderer renderer;
-		public List<GameObject> walls = new List<GameObject>();
-	}
-	[Serializable] public class BridgeData
-	{
-		public int[] connectionIndex = new int[2];
-		public int direction;
-		public GameObject obj; public SpriteRenderer renderer;
-		public GameObject[] walls = new GameObject[2];
-	}
-
 #region Generation
 
 	/// Begin recursive dig with config class given
