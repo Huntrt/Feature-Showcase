@@ -6,7 +6,7 @@ using System;
 
 namespace ProceduralMapGeneration.Digger
 {
-public class DA_Builder : MonoBehaviour
+public class DiggerBuilder : MonoBehaviour
 {
 	public DiggerConfig diggerConfig;
 	

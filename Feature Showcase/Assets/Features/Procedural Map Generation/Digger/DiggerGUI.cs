@@ -5,11 +5,11 @@ using TMPro;
 
 namespace ProceduralMapGeneration.Digger
 {
-public class DA_GUI : MonoBehaviour
+public class DiggerGUI : MonoBehaviour
 {
     public TextMeshProUGUI plotCounter;
 	public TMP_InputField amountSetter;
-	public DA_Builder builder;
+	public DiggerBuilder builder;
 	DiggerConfig config;
 
 	void Start()
