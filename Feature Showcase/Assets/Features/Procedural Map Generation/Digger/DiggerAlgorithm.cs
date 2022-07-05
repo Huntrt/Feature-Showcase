@@ -11,18 +11,19 @@ public class DiggerAlgorithm : MonoBehaviour
 	public static DiggerAlgorithm i {get{if(_i==null){_i = GameObject.FindObjectOfType<DiggerAlgorithm>();}return _i;}} static DiggerAlgorithm _i;
 
 #region Generation
-
 	/// Begin recursive dig with config class given
 	public void RecursiveDig(DiggerConfig config, bool overwrite = false)
 	{
 		//Stop if already dig except when need to overwriten
 		if(config.isDigging) {if(!overwrite) {return;}}
+		//Renew the preview grouper
+		ClearPreview(config, true);
 		//Clear all the dig in config given
 		config.dugs.Clear();
 		//Are now digging
 		config.isDigging = true;
 		//Dig at 0,0 then set it position at start position
-		DigAtLocation(config, new Vector2(0,0), config.startPosition);
+		DigAtLocation(config, 0, new Vector2(0,0), config.startPosition);
 		//Begin digging at that first plot of given config
 		StartCoroutine(Digging(config, config.dugs[0], config.dugs[0]));
 	}
@@ -32,7 +33,7 @@ public class DiggerAlgorithm : MonoBehaviour
 		//This room are now the current leader
 		config.miners.Add(miner);
 		//Draft miner and digged
-		//! Drafting(miner, digged);
+		Previewing(config, miner, digged);
 		//Wait for an frame
 		yield return null;
 		//Begin decide direction to dig at this miner
@@ -80,7 +81,7 @@ public class DiggerAlgorithm : MonoBehaviour
 				if(result[choosed] == true) miner.bypassedDirection = choosed;
 			}
 			//Change the draft color at miner index to stuck
-			//! ChangeDraftColor(miner.index, Builder.Draft.Colors.stuck);
+			ChangePreviewColor(config, miner.index, config.preview.stuck);
 			//Try to bypass at miner in bypass direction has get
 			TryToBypass(config, miner, miner.bypassedDirection);
 		}
@@ -129,7 +130,7 @@ public class DiggerAlgorithm : MonoBehaviour
 		if(miner.digCount >= config.miningConstraint.maximum) {return;}
 
 		//? Dig for miner at direction in direction vector with next corrdinate
-		DigPlot(config, miner, dir, dirVector, nextCoord);
+		BeginDigPlot(config, miner, dir, dirVector, nextCoord);
 	}
 
 	void TryToBypass(DiggerConfig config, DigPlot bypasser, int dir)
@@ -142,13 +143,13 @@ public class DiggerAlgorithm : MonoBehaviour
 			//Try to bypass at that attempt in the same direction
 			TryToBypass(config, attempt, dir);
 			//Change the draft color at attempt index to bypassed
-			//! ChangeDraftColor(attempt.index, Builder.Draft.Colors.bypassed);
+			ChangePreviewColor(config, attempt.index, config.preview.bypassed);
 		}
 		//If there no longer dug at attempt
 		else
 		{
 			//Dig an new dug at the same direction of that empty attempt
-			DigPlot(config, bypasser, dir, dirVector, nextCoord);
+			BeginDigPlot(config, bypasser, dir, dirVector, nextCoord);
 		}
 	}
 	
@@ -164,25 +165,26 @@ public class DiggerAlgorithm : MonoBehaviour
 	}
 
 	//? Dig an new plot with given position and coordinates
-	DigPlot DigAtLocation(DiggerConfig config, Vector2 coord, Vector2 pos)
+	DigPlot DigAtLocation(DiggerConfig config, int index, Vector2 coord, Vector2 pos)
 	{
 		//Create an new empty dig
 		DigPlot newDig = new DigPlot();
-		//@ Assign the new dig coordinate and position as given
+		//@ Assign the new dig index, coordinate and position as given
+		newDig.index = index;
 		newDig.coordinate = coord; 
 		newDig.position = pos;
 		//Add the new dig to config list then return it
 		config.dugs.Add(newDig); return newDig;
 	}
 
-	void DigPlot(DiggerConfig config, DigPlot miner, int dir, Vector2 dirVector, Vector2 nextCoord)
+	void BeginDigPlot(DiggerConfig config, DigPlot miner, int dir, Vector2 dirVector, Vector2 nextCoord)
 	{
 		//If this direction haven't got empty neighbor then create one
 		if(miner.neighbors[dir] == null) miner.neighbors[dir] = new DigPlot.Neighbor();
 		//Get the next position by using miner with direction vector
 		Vector2 nextPos = GetPositionInDirection(config, miner, dirVector);
 		//Create an new digged dug with index of dug count at direction coordinate and next position
-		DigPlot newDig = DigAtLocation(config, nextCoord, nextPos);
+		DigPlot newDig = DigAtLocation(config, config.dugs.Count, nextCoord, nextPos);
 		//Counting this dig of miner
 		miner.digCount++;
 		//The neighbor in this direction of miner got dig by it
@@ -207,7 +209,7 @@ public class DiggerAlgorithm : MonoBehaviour
 		if(!retry && miner.digCount == 0 && miner.bypassedDirection == -1)
 		{
 			//Change the draft color at miner index to over
-			//! ChangeDraftColor(miner.index, Builder.Draft.Colors.over);
+			ChangePreviewColor(config, miner.index, config.preview.over);
 		}
 	}
 
@@ -224,16 +226,14 @@ public class DiggerAlgorithm : MonoBehaviour
 		{
 			//Get the vector in this direction
 			Vector2 dirVector = DirectionIndexToVector(n);
-			//If this direction haven't got empty neighbor then create one
-			if(config.dugs[d].neighbors[n] == null) config.dugs[d].neighbors[n] = new DigPlot.Neighbor();
 			//Get the neighbor in this direction of this dug
 			DigPlot.Neighbor neighbor = config.dugs[d].neighbors[n];
 			//Get coordinate of this neighbor by increase this dug coordinate with direction vector
 			neighbor.coordinate = config.dugs[d].coordinate + dirVector;
 			//Get position of this neighbor by apply this dug with direction vector
 			neighbor.position = GetPositionInDirection(config, config.dugs[d], dirVector);
-			//If the finded dug not empty then this neighbor no longer empty
-			if(!DiggerGeneral.GetDugAtCoordinate(config.dugs, neighbor.coordinate).empty) {neighbor.empty = false;}
+			//Find the dug at this neighbor coodrinate to check if it exist
+			if(DiggerGeneral.GetDugAtCoordinate(config.dugs, neighbor.coordinate) != null) {neighbor.empty = false;}
 		}
 	}
 
@@ -244,11 +244,9 @@ public class DiggerAlgorithm : MonoBehaviour
 		//No longer digging
 		config.isDigging = false;
 		//Call complete dig
-		config.digCompleted.Invoke();
-		//Begin build structure after generated
-		//! AssembleStructure();
-		//Only clear draft after generated when needed
-		//! if(builder.draft.clearAfterDig) ClearDraft(false);
+		config.digCompleted?.Invoke();
+		//Clear all preview when need to clear after complete
+		if(config.preview.clearAfterDig) ClearPreview(config, false);
 	}
 #endregion
 
@@ -272,56 +270,45 @@ public class DiggerAlgorithm : MonoBehaviour
 #endregion
 
 #region Preview
+	void Previewing(DiggerConfig config, DigPlot miner, DigPlot digged)
+	{
+		//Stop if dont need to review
+		if(!config.preview.enable) return;
+		//Only need to create new preview if dig haven't get enough preview
+		if(config.preview.previewObjs.Count >= config.dugs.Count) return;
+		PreviewObj newPre = new PreviewObj();
+		newPre.digIndex = miner.index;
+		newPre.obj = Instantiate(config.preview.prefab, miner.position, Quaternion.identity);
+		newPre.obj.transform.localScale = new Vector2(config.preview.size, config.preview.size);
+		newPre.obj.transform.SetParent(config.preview.grouper.transform);
+		newPre.obj.name = "Draft of " + newPre.digIndex;
+		newPre.render = newPre.obj.GetComponent<SpriteRenderer>();
+		config.preview.previewObjs.Add(newPre);
+		//Change the preview color at miner index to miner color
+		ChangePreviewColor(config, miner.index, config.preview.miner);
+		//Change the preview color at digged index to digged color
+		ChangePreviewColor(config, digged.index, config.preview.digged);
+	}
 
-	// public void ClearDraft(bool renew)
-	// {
-	// 	//Clear draft data list
-	// 	//! drafts.Clear(); 
-	// 	//Destroy the draft grouper if it already exist
-	// 	if(builder.draft.grouper != null) Destroy(builder.draft.grouper);
-	// 	//Create an new draft grouper if needed to renew
-	// 	if(renew) {builder.draft.grouper = new GameObject(); builder.draft.grouper.name = "Dafts Group";}
-	// }
+	void ChangePreviewColor(DiggerConfig config, int peviewIndex, Color color) 
+	{
+		//Stop if dont need to review
+		if(!config.preview.enable) return;
+		//Set the color at preview index in given config to given cloor
+		config.preview.previewObjs[peviewIndex].render.color = color;
+	}
 
-// 	void Drafting(DigPlot miner, DigPlot digged)
-// 	{
-// 		//Only need to create new draft if plots haven't get enough draft and only when need to draft
-// 		if(drafts.Count >= plots.Count || !builder.draft.enable) return;
-// 		//Setup an empty new draft
-// 		DraftData newDraft = new DraftData();
-// 		//Save the miner index to draft's plot index
-// 		newDraft.plotIndex = miner.index;
-// 		//Instantiate an draft prefab at miner position then save it to data
-// 		newDraft.obj = Instantiate(builder.draft.prefab, miner.position, Quaternion.identity);
-// 		//Set the draft object scale as the master scaled of the draft scale
-// 		newDraft.obj.transform.localScale = new Vector2(MasterScaling("draft"), MasterScaling("draft"));
-// 		//Group the draft parent
-// 		newDraft.obj.transform.SetParent(builder.draft.grouper.transform);
-// 		//Add plot index to the draft object name
-// 		newDraft.obj.name = "Draft of " + newDraft.plotIndex;
-// 		//Save the new draft object's sprite renderer to data
-// 		newDraft.renderer = newDraft.obj.GetComponent<SpriteRenderer>();
-// 		//Add new draft data to list
-// 		drafts.Add(newDraft);
-// 		//Change the draft color at miner index to miner color
-// 		ChangeDraftColor(miner.index, Builder.Draft.Colors.miner);
-// 		//Change the draft color at digged index to digged color
-// 		ChangeDraftColor(digged.index, Builder.Draft.Colors.digged);
-// 	}
-
-// 	void ChangeDraftColor(int index, Builder.Draft.Colors color)
-// 	{
-// 		//Only change draft color if drafting enable
-// 		if(!builder.draft.enable) return;
-// 		//Get the sprite render of draft at given index
-// 		SpriteRenderer renderer = drafts[index].renderer;
-// 		//@ Set that draft color color according to given string
-// 		if(color == Builder.Draft.Colors.digged)   {renderer.color = builder.draft.digged;   return;}
-// 		if(color == Builder.Draft.Colors.miner)    {renderer.color = builder.draft.miner;    return;}
-// 		if(color == Builder.Draft.Colors.stuck)    {renderer.color = builder.draft.stuck;    return;}
-// 		if(color == Builder.Draft.Colors.bypassed) {renderer.color = builder.draft.bypassed; return;}
-// 		if(color == Builder.Draft.Colors.over)     {renderer.color = builder.draft.over;     return;}
-// 	}
+	public void ClearPreview(DiggerConfig config, bool renew)
+	{
+		//Stop if dont need to review
+		if(!config.preview.enable) return;
+		//Clear preview objects list
+		config.preview.previewObjs.Clear(); 
+		//Destroy the preview grouper if it already exist
+		if(config.preview.grouper != null) Destroy(config.preview.grouper);
+		//Create an new preview grouper if need to renew
+		if(renew) config.preview.grouper = new GameObject(); config.preview.grouper.name = "Preview Group";
+	}
 #endregion
 }
 } //? namespace close

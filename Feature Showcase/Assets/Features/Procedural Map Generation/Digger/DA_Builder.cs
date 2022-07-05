@@ -62,6 +62,8 @@ public class DA_Builder : MonoBehaviour
 	// 	public GameObject[] walls = new GameObject[2];
 	// }
 
+	public void BeginDig() {DiggerAlgorithm.i.RecursiveDig(diggerConfig);}
+
 // public void ClearGeneration(bool renew, bool clearStructure)
 // {
 // 	//Dont clear if still generating
