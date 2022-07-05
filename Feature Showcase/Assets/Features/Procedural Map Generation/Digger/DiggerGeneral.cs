@@ -27,6 +27,7 @@ namespace ProceduralMapGeneration.Digger
 			[Range(0,4)] public int minimum; [Range(1,4)] public int maximum = 1;
 		}
 		[HideInInspector] public bool isDigging; public Action digCompleted;
+		public PreviewConfig preview;
 		[Header("------- Outputs -------")]
 		public List<DigPlot> dugs = new List<DigPlot>();
 		public List<DigPlot> miners = new List<DigPlot>();
@@ -45,6 +46,18 @@ namespace ProceduralMapGeneration.Digger
 		[HideInInspector] public int bypassedDirection = -1;
 		[HideInInspector] public List<int> availableDirection = new List<int>{0,1,2,3};
 	}
+
+	[Serializable] public class PreviewConfig
+	{
+		public bool enable, clearAfterDig;
+		public GameObject prefab;
+		public float size;
+		public Color digged, miner, stuck, bypassed, over;
+		public enum Colors {digged, miner, stuck, bypassed, over};
+		[HideInInspector] public GameObject grouper;
+		public List<PreviewObj> previewObjs = new List<PreviewObj>();
+	}
+	[Serializable] public class PreviewObj {public GameObject obj; public SpriteRenderer render;}
 
 public static class DiggerGeneral
 {
