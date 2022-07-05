@@ -57,7 +57,12 @@ namespace ProceduralMapGeneration.Digger
 		[HideInInspector] public GameObject grouper;
 		public List<PreviewObj> previewObjs = new List<PreviewObj>();
 	}
-	[Serializable] public class PreviewObj {public GameObject obj; public SpriteRenderer render;}
+	[Serializable] public class PreviewObj 
+	{
+		public int digIndex; 
+		public GameObject obj; 
+		public SpriteRenderer render;
+	}
 
 public static class DiggerGeneral
 {
