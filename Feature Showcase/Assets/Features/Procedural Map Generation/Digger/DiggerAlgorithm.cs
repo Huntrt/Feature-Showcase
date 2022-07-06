@@ -37,7 +37,7 @@ public class DiggerAlgorithm : MonoBehaviour
 		//Wait for an frame
 		yield return null;
 		//Begin decide direction to dig at this miner
-		DirectionalDigging(config, miner);
+		DecideDirectionToDig(config, miner);
 		//Remove this miner after dig
 		config.miners.Remove(miner);
 		//Begin check the digging progress if haven't dig enough plot
@@ -47,7 +47,7 @@ public class DiggerAlgorithm : MonoBehaviour
 	}
 
 	//? Try to bypassed of dig in 4 direction
-	void DirectionalDigging(DiggerConfig config, DigPlot miner)
+	void DecideDirectionToDig(DiggerConfig config, DigPlot miner)
 	{
 		/// DIG
 		//Go through all 4 direction when there still available direction
@@ -57,15 +57,14 @@ public class DiggerAlgorithm : MonoBehaviour
 			List<int> aDir = new List<int>(miner.availableDirection);
 			//Exit loop out of temporary direction
 			if(aDir.Count == 0) {break;}
-			//Get the result of each direction to dig
-			bool[] result = RandomizingDigDirection(config);
-			//Randomly get the available direction gonna use
-			int use = UnityEngine.Random.Range(0, aDir.Count);
-			//Try to dig at that available direction with it result
-			TryToDig(config, miner, aDir[use], result[use]);
+			//Randomly decide the available direction to dig
+			int decided = UnityEngine.Random.Range(0, aDir.Count);
+			//Try to dig at that available decided direction with it randomize result
+			TryToDig(config, miner, aDir[decided], RandomizingDigDirection(config)[decided]);
 			//Remove this direction from temporary
-			aDir.Remove(use);
+			aDir.Remove(decided);
 		}
+
 		/// BYPASS
 		//If there are no available direction and this is the only miner left
 		else if(config.miners.Count <= 1)
@@ -73,12 +72,10 @@ public class DiggerAlgorithm : MonoBehaviour
 			//Will continuous run until miner has direction to bypass
 			while (miner.bypassedDirection == -1)
 			{
-				//Get the result of each direction to bypassed
-				bool[] result = RandomizingDigDirection(config);
-				//Randomly get an choosed an direction to bypass
-				int choosed = UnityEngine.Random.Range(0,4);
-				//If the result in choosed direction are true then miner start bypass in that direction
-				if(result[choosed] == true) miner.bypassedDirection = choosed;
+				//Randomly bypass anjy direction
+				int bypass = UnityEngine.Random.Range(0,4);
+				//If the result of bypass direction allow then miner start bypass in that direction
+				if(RandomizingDigDirection(config)[bypass] == true) miner.bypassedDirection = bypass;
 			}
 			//Change the draft color at miner index to stuck
 			ChangePreviewColor(config, miner.index, config.preview.stuck);
@@ -118,8 +115,8 @@ public class DiggerAlgorithm : MonoBehaviour
 
 	void TryToDig(DiggerConfig config, DigPlot miner, int dir, bool allow)
 	{
-		//? Get the next dug of miner at given direction
-		GetNextDug(config, miner, dir, out Vector2 dirVector, out Vector2 nextCoord, out DigPlot nextDig);
+		//? Get the dug next to miner in given direction
+		DigPlot nextDig = GetAdjacentDug(config, miner, dir, out Vector2 nextCoord);
 
 		//? Are able to dig in this direction
 		//STOP dig and this direction are no longer available when next dug have exist
@@ -129,71 +126,64 @@ public class DiggerAlgorithm : MonoBehaviour
 		//STOP dig if miner has dig over the maximum allow
 		if(miner.digCount >= config.miningConstraint.maximum) {return;}
 
-		//? Dig for miner at direction in direction vector with next corrdinate
-		BeginDigPlot(config, miner, dir, dirVector, nextCoord);
+		//? Dig for miner with given direction at next corrdinate
+		DigNextPlot(config, miner, dir, nextCoord);
 	}
 
 	void TryToBypass(DiggerConfig config, DigPlot bypasser, int dir)
 	{
-		//Get the next dug of bypasser in given direction to attempt that dug
-		GetNextDug(config, bypasser, dir, out Vector2 dirVector, out Vector2 nextCoord, out DigPlot attempt);
-		//If there still dug at the attempt
+		//Attempt to get the dug in given direction of current bypasser
+		DigPlot attempt = GetAdjacentDug(config, bypasser, dir, out Vector2 nextCoord);
+		//If the attempt exist
 		if(attempt != null) 
 		{
-			//Try to bypass at that attempt in the same direction
+			//Use that attempt as an new bypasser to bypass in the same direction
 			TryToBypass(config, attempt, dir);
 			//Change the draft color at attempt index to bypassed
 			ChangePreviewColor(config, attempt.index, config.preview.bypassed);
 		}
-		//If there no longer dug at attempt
+		//If the attempt havent got dug
 		else
 		{
-			//Dig an new dug at the same direction of that empty attempt
-			BeginDigPlot(config, bypasser, dir, dirVector, nextCoord);
+			//Dig an new plot for bypasser at the same direction of that empty attempt
+			DigNextPlot(config, bypasser, dir, nextCoord);
 		}
 	}
 	
-	//? Get the info of the dug at given direction of given dug
-	void GetNextDug(DiggerConfig config,DigPlot dug,int dir,out Vector2 dirV,out Vector2 nextCoord,out DigPlot nextPlot)
+	//? Get the the dug at given direction to the given dug 
+	DigPlot GetAdjacentDug(DiggerConfig config, DigPlot dug, int dir, out Vector2 nextCoord)
 	{
-		//Get the vector of this current direction
-		dirV = DirectionIndexToVector(dir);
-		//Get the next coordinate at given dug coord coordinate increase with direction vector
-		nextCoord = dug.coordinate + dirV;
+		//Get the next coordinate at given dug coord coordinate increase with vector of given direction
+		nextCoord = dug.coordinate + DirectionIndexToVector(dir);
 		//Find the next dug at next coordinate
-		nextPlot = DiggerGeneral.GetDugAtCoordinate(config.dugs, nextCoord);
+		return DiggerGeneral.GetDugAtCoordinate(config.dugs, nextCoord);
 	}
-
+	
 	//? Dig an new plot with given position and coordinates
 	DigPlot DigAtLocation(DiggerConfig config, int index, Vector2 coord, Vector2 pos)
 	{
-		//Create an new empty dig
 		DigPlot newDig = new DigPlot();
-		//@ Assign the new dig index, coordinate and position as given
 		newDig.index = index;
 		newDig.coordinate = coord; 
 		newDig.position = pos;
+		newDig.empty = false;
 		//Add the new dig to config list then return it
 		config.dugs.Add(newDig); return newDig;
 	}
 
-	void BeginDigPlot(DiggerConfig config, DigPlot miner, int dir, Vector2 dirVector, Vector2 nextCoord)
+	void DigNextPlot(DiggerConfig config, DigPlot miner, int dir, Vector2 coord)
 	{
-		//If this direction haven't got empty neighbor then create one
-		if(miner.neighbors[dir] == null) miner.neighbors[dir] = new DigPlot.Neighbor();
-		//Get the next position by using miner with direction vector
-		Vector2 nextPos = GetPositionInDirection(config, miner, dirVector);
-		//Create an new digged dug with index of dug count at direction coordinate and next position
-		DigPlot newDig = DigAtLocation(config, config.dugs.Count, nextCoord, nextPos);
-		//Counting this dig of miner
-		miner.digCount++;
-		//The neighbor in this direction of miner got dig by it
-		miner.neighbors[dir].digbyThis = true;
+		//Get the next position by using vector of given direction with given miner 
+		Vector2 nextPos = GetPositionInDirection(config, miner, DirectionIndexToVector(dir));
+		//Create an new dug with index of current dug count at given coordinate with position has get
+		DigPlot newDig = DigAtLocation(config, config.dugs.Count, coord, nextPos);
+		//Given miner has dig and neighbor in given direction got dig by it
+		miner.digCount++; miner.neighbors[dir].digbyThis = true;
 		//This direction of miner are no longer available
 		SetDirectionUnavailable(dir, miner);
 		///Begin dig again at that newly digged dug
 		StartCoroutine(Digging(config, newDig, miner));
-	}	
+	}
 
 	void CheckingDigProgress(DiggerConfig config, DigPlot miner)
 	{
@@ -232,8 +222,18 @@ public class DiggerAlgorithm : MonoBehaviour
 			neighbor.coordinate = config.dugs[d].coordinate + dirVector;
 			//Get position of this neighbor by apply this dug with direction vector
 			neighbor.position = GetPositionInDirection(config, config.dugs[d], dirVector);
-			//Find the dug at this neighbor coodrinate to check if it exist
-			if(DiggerGeneral.GetDugAtCoordinate(config.dugs, neighbor.coordinate) != null) {neighbor.empty = false;}
+			//Find an dug at this neighbor coodrinate
+			DigPlot findDug = DiggerGeneral.GetDugAtCoordinate(config.dugs, neighbor.coordinate);
+			//If found an dug
+			if(findDug != null)
+			{
+				//Set this neighbor index as found dug index
+				neighbor.index = findDug.index;
+				//This neighbor are no nonger empty
+				neighbor.empty = false;
+				//This dug has lost one empty neighbor
+				config.dugs[d].emptyNeighbor--;
+			}
 		}
 	}
 
