@@ -169,7 +169,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   diggerConfig:
     amount: 100
-    spacing: 0.3
+    spacing: 0.4
     startPosition: {x: 0, y: 0}
     digChance:
       generalChance: 50
@@ -184,10 +184,10 @@ MonoBehaviour:
     isDigging: 0
     preview:
       enable: 1
-      clearAfterDig: 0
+      clearAfterDig: 1
       prefab: {fileID: 4558046587480059573, guid: ca4eee04cfe5b634a999274ded4b3a65,
         type: 3}
-      size: 0.2
+      size: 0.3
       digged: {r: 0.15, g: 0.15, b: 0.15, a: 1}
       miner: {r: 0.27, g: 0.9, b: 0.27, a: 1}
       stuck: {r: 0.9019608, g: 0.2705882, b: 0.2705882, a: 1}
@@ -197,6 +197,35 @@ MonoBehaviour:
       previewObjs: []
     dugs: []
     miners: []
+  builder:
+    masterScale: 0.3
+    autoScale: 1
+    floor:
+      enable: 1
+      prefab: {fileID: 4558046587480059573, guid: 8d8064d8785e0af489b41e27b7d2504a,
+        type: 3}
+      size: 1
+      color: {r: 0.099, g: 0.099, b: 0.099, a: 1}
+      grouper: {fileID: 0}
+    bridge:
+      enable: 1
+      bridgeChance: 100
+      prefab: {fileID: 4558046587480059573, guid: 2b9a5244ee456d0479c6b65170c38269,
+        type: 3}
+      width: 0.3
+      length: 0
+      color: {r: 0.103773594, g: 0.103773594, b: 0.103773594, a: 1}
+      grouper: {fileID: 0}
+    wall:
+      enableBarrier: 1
+      enableRailing: 1
+      barricadeNeighbor: 1
+      prefab: {fileID: 4558046587480059573, guid: 4d71913f6a425e641909cd8e3872aa59,
+        type: 3}
+      thick: 0.1
+      length: 0
+      color: {r: 1, g: 1, b: 1, a: 0.5019608}
+      grouper: {fileID: 0}
 --- !u!1 &11310626
 GameObject:
   m_ObjectHideFlags: 0
