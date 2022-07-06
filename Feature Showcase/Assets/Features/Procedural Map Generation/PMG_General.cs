@@ -5,7 +5,7 @@ namespace ProceduralMapGeneration
 {
 	[Serializable] public class PlotData
 	{
-		public int index;
+		public int index = -1;
 		public Vector2 coordinate;
 		public Vector2 position;
 		public bool empty = true;
