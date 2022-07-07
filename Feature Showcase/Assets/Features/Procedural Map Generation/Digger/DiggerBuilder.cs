@@ -48,7 +48,6 @@ public class DiggerBuilder : MonoBehaviour
 
 	List<FloorData> floors = new List<FloorData>();
 	List<BridgeData> bridges = new List<BridgeData>();
-
 	[Serializable] public class FloorData
 	{
 		public int plotIndex;
@@ -68,30 +67,31 @@ public class DiggerBuilder : MonoBehaviour
 	void OnEnable(){diggerConfig.digCompleted += AssembleStructure;}
 	void OnDisable() {diggerConfig.digCompleted -= AssembleStructure;}
 
-	//? Assemble Structure -> Build X -> Format X -> Create Structure -> Listing X
+	//? Assemble Structure -> Build Bridge -> Decide direction to bridge -> Format Bridge -> Format Railing ->
+	//? -> Build all floor -> Build wall for each floor -> Format Barrier -> Format Gate -> Completed
 
 	void AssembleStructure()
 	{
 		//Clear all the structure before assemble new one
 		ClearStructure(true);
 		//Begin build bridge for all the plot if enable
-		if(builder.bridge.enable) {for (int p = 0; p < diggerConfig.dugs.Count; p++) {BuildBridge(diggerConfig.dugs[p]);}}
+		if(builder.bridge.enable) {for (int p = 0; p < diggerConfig.dugs.Count; p++) {ConnectBridge(diggerConfig.dugs[p]);}}
 		//Begin build floor for all the plot if enable
 		if(builder.floor.enable) {for (int p = 0; p < diggerConfig.dugs.Count; p++) {BuildFloor(diggerConfig.dugs[p]);}}
 	}
 
-	#region Bridge
-	void BuildBridge(DigPlot plot)
+#region Bridge
+	void ConnectBridge(DigPlot plot)
 	{
-		//Get connection to use for bridging of plot given
-		DigPlot.Neighbor[] connects = GetConnectionForBridge(plot);
-		//Go through all 4 connection of plot given
+		//Decide which neighbor will be connect to build bridge on them
+		DigPlot.Neighbor[] connects = DecideNeighborToConnect(plot);
+		//Go through all 4 connection has get
 		for (int c = 0; c < 4; c++)
 		{
 			//Skip if this current connection don't exist
 			if(connects[c] == null) continue;
-			//Format an bridge from plot to connection
-			GameObject bridge = FormatBridge(plot, connects[c], c);
+			//Build an bridge from plot to connection
+			GameObject bridge = BuildBridge(plot, connects[c], c);
 			//Get the connection from plot to current connect index
 			int[] connection = new int[]{plot.index, connects[c].index};
 			//List bridge with connection, bridge object then build it railing
@@ -99,7 +99,7 @@ public class DiggerBuilder : MonoBehaviour
 		}
 	}
 
-	DigPlot.Neighbor[] GetConnectionForBridge(DigPlot plot)
+	DigPlot.Neighbor[] DecideNeighborToConnect(DigPlot plot)
 	{
 		//Create 4 empty connection
 		DigPlot.Neighbor[] connects = new DigPlot.Neighbor[4];
@@ -145,11 +145,10 @@ public class DiggerBuilder : MonoBehaviour
 				plot.neighbors[n].hasBridge = true;
 			}
 		}
-		//Return all connection has made
 		return connects;
 	}
 
-	GameObject FormatBridge(DigPlot plot, DigPlot.Neighbor connect, int dir)
+	GameObject BuildBridge(DigPlot plot, DigPlot.Neighbor connect, int dir)
 	{
 		//Get this plot and current connect position
 		Vector2 plotP = plot.position; Vector2 conP = connect.position;
@@ -166,58 +165,9 @@ public class DiggerBuilder : MonoBehaviour
 		//Return the newly create an bridge structure using all the data above
 		return CreateStructure(name, "bridge", pos, scale, rot);
 	}
+#endregion
 
-	GameObject[] BuildRailing(GameObject bridge, int direction, int[] index)
-	{
-		//Return null if dont need to build railing
-		if(!builder.wall.enableRailing) {return null;}
-		//Create 2 null gameobject to store railing
-		GameObject[] walls = new GameObject[2]{null, null};
-		//Get the bridge position
-		Vector2 bridgePos = bridge.transform.position;
-		//Create 2 vector for wall position that using bridge position
-		Vector2[] wallsPos = new Vector2[2]{bridgePos, bridgePos}; 
-		//Create 2 empty vector for wall scale
-		Vector2[] wallScale = new Vector2[2];
-		//Get the thick of wall by master scaling
-		float wallThick = MasterScaling("wall");
-		//Get how far to place wall by increase half of bridge width with wall thick
-		float railingSpaced = (MasterScaling("bridge")/2) + (wallThick/2);
-		//Get railing as length as custom wall length
-		float railingLength = builder.wall.length;
-		//Increase railing with spacing if enable auto scale
-		if(builder.autoScale) {railingLength += MasterScaling("spacing");}
-		//@ Set the wall position and scale in certain axis base on it horizontal or vertical
-		//The bridge are vertical
-		if(direction <= 1)
-		{
-			wallsPos[0].x += railingSpaced;
-			wallsPos[1].x -= railingSpaced;
-			wallScale[0] = new Vector3(wallThick, railingLength);
-			wallScale[1] = new Vector3(wallThick, railingLength);
-		}
-		//The bridge are horizontal
-		else
-		{
-			wallsPos[0].y += railingSpaced;
-			wallsPos[1].y -= railingSpaced;
-			wallScale[0] = new Vector3(railingLength, wallThick);
-			wallScale[1] = new Vector3(railingLength, wallThick);
-		}
-		//Go through 2 railing
-		for (int r = 0; r < 2; r++)
-		{
-			//Set the name for railing (X > Y Raling [R])
-			string naming = index[0] + " > " + index[1] + " Railing ["+r+"]";
-			//Create an wall at position and scale has get
-			walls[r] = CreateStructure(naming, "wall", wallsPos[r], wallScale[r]);
-		}
-		//Return railing has build
-		return walls;
-	}
-	#endregion
-
-	#region Floor
+#region Floor
 	void BuildFloor(DigPlot plot)
 	{
 		//Get the master scaling of floor
@@ -226,16 +176,16 @@ public class DiggerBuilder : MonoBehaviour
 		string naming = plot.index + " Floor";
 		//Createan floor with name, scale has got and at given plot position
 		GameObject floor = CreateStructure(naming, "floor", plot.position, scale);
-		//List the newly create floor with given plot index then build barrier at it
-		ListingFloor(plot.index, floor, BuildBarrier(plot));
+		//List the newly create floor with given plot index then formating it wall
+		ListingFloor(plot.index, floor, FormatWalls(plot));
 	}
 
-	List<GameObject> BuildBarrier(DigPlot plot)
+	List<GameObject> FormatWalls(DigPlot plot)
 	{
 		//Return null if dont need to build barrier
 		if(!builder.wall.enableBarrier) {return null;}
-		//Empty list of gameobject for barrier
-		List<GameObject> barriers = new List<GameObject>();
+		//Empty list of gameobject for wall
+		List<GameObject> walls = new List<GameObject>();
 		//Go through all the neighbor of given plot
 		for (int n = 0; n < 4; n++)
 		{
@@ -244,10 +194,10 @@ public class DiggerBuilder : MonoBehaviour
 			//If neighbor dont has bridge
 			if(!neighbor.hasBridge)
 			{
-				//Format an barrier for given plot in this neighbor then list them
-				GameObject barrier = FormatBarrier(plot, n);
+				//Build an barrier for given plot in this neighbor then list them
+				GameObject barrier = BuildBarrier(plot, n);
 				//Add barrier to it list data if it exist
-				if(barrier != null) barriers.Add(barrier);
+				if(barrier != null) walls.Add(barrier);
 			}
 			//If neighbor has bridge
 			else
@@ -259,18 +209,16 @@ public class DiggerBuilder : MonoBehaviour
 				//For each side of this neighbor
 				for (int s = 0; s < 2; s++)
 				{
-					//Format an barrier for given plot in this direction with gate length
-					GameObject barrier = FormatBarrier(plot, n, gateLength);
-					//Format the created barrier for given plot in this neighbor and side to be an gate
-					barriers.Add(FormatGate(barrier, plot, n, s));
+					//Build an gate for this plot in this neighbor and on this side
+					walls.Add(BuildGate(BuildBarrier(plot, n, gateLength), plot, n, s));
 				}
 			}
 		}
 		//Return all the barrier has created
-		return barriers;
+		return walls;
 	}
 
-	GameObject FormatBarrier(DigPlot plot, int direction, float gateLength = -1)
+	GameObject BuildBarrier(DigPlot plot, int direction, float gateLength = -1)
 	{
 		//Don't barricade neighbor in this direction if it has dig when no need to barricade
 		if(!plot.neighbors[direction].empty && !builder.wall.barricadeNeighbor) return null;
@@ -328,7 +276,7 @@ public class DiggerBuilder : MonoBehaviour
 		return CreateStructure(naming, "wall", position, scale);
 	}
 
-	GameObject FormatGate(GameObject gate, DigPlot plot, int direction, int side)
+	GameObject BuildGate(GameObject gate, DigPlot plot, int direction, int side)
 	{
 		float floorScale = MasterScaling("floor"); 
 		float wallThick = MasterScaling("wall"); 
@@ -348,7 +296,56 @@ public class DiggerBuilder : MonoBehaviour
 		//Return the gate has align
 		return gate;
 	}
-	#endregion
+	
+	GameObject[] BuildRailing(GameObject bridge, int direction, int[] index)
+	{
+		//Return null if dont need to build railing
+		if(!builder.wall.enableRailing) {return null;}
+		//Create 2 null gameobject to store railing
+		GameObject[] walls = new GameObject[2]{null, null};
+		//Get the bridge position
+		Vector2 bridgePos = bridge.transform.position;
+		//Create 2 vector for wall position that using bridge position
+		Vector2[] wallsPos = new Vector2[2]{bridgePos, bridgePos}; 
+		//Create 2 empty vector for wall scale
+		Vector2[] wallScale = new Vector2[2];
+		//Get the thick of wall by master scaling
+		float wallThick = MasterScaling("wall");
+		//Get how far to place wall by increase half of bridge width with wall thick
+		float railingSpaced = (MasterScaling("bridge")/2) + (wallThick/2);
+		//Get railing as length as custom wall length
+		float railingLength = builder.wall.length;
+		//Increase railing with spacing if enable auto scale
+		if(builder.autoScale) {railingLength += MasterScaling("spacing");}
+		//@ Set the wall position and scale in certain axis base on it horizontal or vertical
+		//The bridge are vertical
+		if(direction <= 1)
+		{
+			wallsPos[0].x += railingSpaced;
+			wallsPos[1].x -= railingSpaced;
+			wallScale[0] = new Vector3(wallThick, railingLength);
+			wallScale[1] = new Vector3(wallThick, railingLength);
+		}
+		//The bridge are horizontal
+		else
+		{
+			wallsPos[0].y += railingSpaced;
+			wallsPos[1].y -= railingSpaced;
+			wallScale[0] = new Vector3(railingLength, wallThick);
+			wallScale[1] = new Vector3(railingLength, wallThick);
+		}
+		//Go through 2 railing
+		for (int r = 0; r < 2; r++)
+		{
+			//Set the name for railing (X > Y Raling [R])
+			string naming = index[0] + " > " + index[1] + " Railing ["+r+"]";
+			//Create an wall at position and scale has get
+			walls[r] = CreateStructure(naming, "wall", wallsPos[r], wallScale[r]);
+		}
+		//Return railing has build
+		return walls;
+	}
+#endregion
 
 	GameObject CreateStructure(string naming,string structure,Vector2 position,Vector2 scale,float rotation=0)
 	{
