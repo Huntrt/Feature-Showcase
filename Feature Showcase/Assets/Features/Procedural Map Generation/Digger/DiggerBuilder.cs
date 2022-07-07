@@ -204,8 +204,8 @@ public class DiggerBuilder : MonoBehaviour
 			{
 				//Skip if not need to barricade gate in this neighbor
 				if(!builder.wall.barricadeNeighbor) continue;
-				//Get gate length by half deceased floor scale and bridge that got increase with wall thick
-				float gateLength = ((MasterScaling("floor")-MasterScaling("bridge"))/2) + MasterScaling("wall");
+				//Get gate length by half deceased floor scale and bridge that got decrease with wall thick
+				float gateLength = ((MasterScaling("floor")-MasterScaling("bridge"))/2) - MasterScaling("wall");
 				//For each side of this neighbor
 				for (int s = 0; s < 2; s++)
 				{
@@ -230,8 +230,8 @@ public class DiggerBuilder : MonoBehaviour
 		//If enable auto scale
 		if(builder.autoScale)
 		{
-			//Set length for barrier by incease floor scale with double wall thick 
-			barrierLength = floorScale + (wallThick*2);
+			//Barrier length as floor scale
+			barrierLength = floorScale;
 			//? Fixing wall poking into floor when not barricade neighbour
 			if(!builder.wall.barricadeNeighbor) for (int n = 0; n < 4; n++)
 			{
@@ -315,8 +315,8 @@ public class DiggerBuilder : MonoBehaviour
 		float railingSpaced = (MasterScaling("bridge")/2) + (wallThick/2);
 		//Get railing as length as custom wall length
 		float railingLength = builder.wall.length;
-		//Increase railing with spacing if enable auto scale
-		if(builder.autoScale) {railingLength += MasterScaling("spacing");}
+		//Increase railing with spacing the got decrease double wall thick if enable auto scale
+		if(builder.autoScale) {railingLength += MasterScaling("spacing") - wallThick*2;}
 		//@ Set the wall position and scale in certain axis base on it horizontal or vertical
 		//The bridge are vertical
 		if(direction <= 1)
