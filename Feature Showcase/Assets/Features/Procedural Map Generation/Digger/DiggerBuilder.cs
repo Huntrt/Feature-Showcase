@@ -35,9 +35,8 @@ public class DiggerBuilder : MonoBehaviour
 		}
 		public Wall wall; [Serializable] public class Wall
 		{
-			public bool enableBarrier;
-			public bool enableRailing;
-			[Tooltip("Will floor create an barrier or gate when there neighbor next to it?")]
+			public bool enableBarrier, enableCorner, enableRailing;
+			[Tooltip("Create an barrier or gate when there is neighbor")]
 			public bool barricadeNeighbor;
 			public GameObject prefab;
 			public float thick, length;
@@ -186,6 +185,8 @@ public class DiggerBuilder : MonoBehaviour
 		if(!builder.wall.enableBarrier) {return null;}
 		//Empty list of gameobject for wall
 		List<GameObject> walls = new List<GameObject>();
+		//Build corner for this plot first if needed
+		if(builder.wall.enableCorner) walls = BuildCorner(plot);
 		//Go through all the neighbor of given plot
 		for (int n = 0; n < 4; n++)
 		{
@@ -227,34 +228,8 @@ public class DiggerBuilder : MonoBehaviour
 		float barrierLength = 0;
 		float wallThick = MasterScaling("wall");
 		float floorScale = MasterScaling("floor");
-		//If enable auto scale
-		if(builder.autoScale)
-		{
-			//Barrier length as floor scale
-			barrierLength = floorScale;
-			//? Fixing wall poking into floor when not barricade neighbour
-			if(!builder.wall.barricadeNeighbor) for (int n = 0; n < 4; n++)
-			{
-				//Skip neighbor in this direction if currently build barrier for it or has dig
-				if(n == direction || plot.neighbors[n].empty) continue;
-				//If this barrier direction are VERTICAL
-				if(direction <= 1)
-				{
-					//If direction are LEFT cut off barrier length then move RIGHT
-					if(n == 2) {position.x += wallThick/2; barrierLength -= wallThick;}
-					//If direction are RIGHT cut off barrier length then moveLEFT
-					if(n == 3) {position.x -= wallThick/2; barrierLength -= wallThick;}
-				}
-				//If this barrier direction are HORIZONTAL
-				if(direction >= 2)
-				{
-					//If direction are UP cut off barrier length then move DOWN
-					if(n == 0) {position.y -= wallThick/2; barrierLength -= wallThick;}
-					//If direction are DOWN cut off barrier length then movE UP
-					if(n == 1) {position.y += wallThick/2; barrierLength -= wallThick;}
-				}
-			}
-		}
+		// Barrier length as floor scale if use auto scale
+		if(builder.autoScale) barrierLength = floorScale;
 		//Overwrite barrier length to given gate length if given not -1
 		if(gateLength >= 0) {barrierLength = gateLength;}
 		//Modify barrier length will custom wall length
@@ -274,6 +249,91 @@ public class DiggerBuilder : MonoBehaviour
 		string naming = plot.index + " Barrier " + "["+direction+"]";
 		//Return the created wall that use getted name, position and scale as barrier
 		return CreateStructure(naming, "wall", position, scale);
+	}
+
+	List<GameObject> BuildCorner(DigPlot plot)
+	{
+		float floorScale = MasterScaling("floor"); 
+		float wallThick = MasterScaling("wall");
+		//Get the scale as square that use wall thick amount
+		Vector2 scale = new Vector2(wallThick, wallThick);
+		//List of corner will be create
+		List<GameObject> corners = new List<GameObject>();
+		//? Create corner for BARRIER
+		for (int b = 0; b < 4; b++)
+		{
+			//If does not barricade neighbor then checking them in 2 both direction
+			if(!builder.wall.barricadeNeighbor) switch(b)
+			{
+				//Skip if any neighbor in [0 = <-↑] [1 = ↑->] [2 = <-↓] [3 = ↓->] are not empty
+				case 0: if(!plot.neighbors[0].empty || !plot.neighbors[2].empty) continue; break;
+				case 1: if(!plot.neighbors[0].empty || !plot.neighbors[3].empty) continue; break;
+				case 2: if(!plot.neighbors[1].empty || !plot.neighbors[2].empty) continue; break;
+				case 3: if(!plot.neighbors[1].empty || !plot.neighbors[3].empty) continue; break;
+			}
+			//The vector that will use to align corner away from original position
+			Vector2 align = new Vector2(0,0);
+			//Corner naming (X Corner UL|UR|DL|DR)
+			string naming = "";
+			//Each of 4 corner
+			switch(b)
+			{
+				//<-↑ UP LEFT
+				case 0: align = new Vector2(-1,01); naming = plot.index + " Barrier Corner [UL]"; break;
+				//↑-> UP RIGHT
+				case 1: align = new Vector2(01,01); naming = plot.index + " Barrier Corner [UR]"; break;
+				//<-↓ DOWN LEFT
+				case 2: align = new Vector2(-1,-1); naming = plot.index + " Barrier Corner [DL]"; break;
+				//↓-> DOWN RIGHT
+				case 3: align = new Vector2(01,-1); naming = plot.index + " Barrier Corner [DR]"; break;
+			}
+			//Get position by aligned given plot position with half of floor scale + wall thick 
+			Vector2 position = plot.position + (align * ((floorScale + wallThick)/2));
+			//Create an barrier with naming, position and scale has get
+			corners.Add(CreateStructure(naming, "wall", position, scale));
+		}
+		//Dont create corner for gate if does not barricade neighbor and enable railing
+		if(!builder.wall.barricadeNeighbor && !builder.wall.enableRailing) return corners;
+		//? Create corner for GATE
+		for (int dir = 0; dir < 4; dir++)
+		{
+			//Skip if there no neighbor in this direction
+			if(plot.neighbors[dir].empty) continue;
+			//Align use half of total floor scale with wall thick
+			float align = ((floorScale + wallThick)/2);
+			//Get the amount that 2 corner will space from each other
+			float spacing = (MasterScaling("bridge") + wallThick)/2;
+			//Corner naming (X Gate Corner [D,S])
+			string naming = "";
+			//Save given plot position
+			Vector2 pos = plot.position;
+			//@ Create 2 corner for each gate at each direction
+			switch(dir)
+			{
+				//@ Set position of corner by modify it axis with align and spacing base on this direction
+				case 0:
+					naming = plot.index + " Gate Corner " + "[UP]";
+					corners.Add(CreateStructure(naming, "wall", pos + new Vector2(+spacing, +align), scale));
+					corners.Add(CreateStructure(naming, "wall", pos + new Vector2(-spacing, +align), scale));
+				break; 
+				case 1:
+					naming = plot.index + " Gate Corner " + "[DOWN]";
+					corners.Add(CreateStructure(naming, "wall", pos + new Vector2(+spacing, -align), scale));
+					corners.Add(CreateStructure(naming, "wall", pos + new Vector2(-spacing, -align), scale));
+				break;
+				case 2:
+					naming = plot.index + " Gate Corner " + "[LEFT]";
+					corners.Add(CreateStructure(naming, "wall", pos + new Vector2(-align, +spacing), scale));
+					corners.Add(CreateStructure(naming, "wall", pos + new Vector2(-align, -spacing), scale));
+				break;
+				case 3:
+					naming = plot.index + " Gate Corner " + "[RIGHT]";
+					corners.Add(CreateStructure(naming, "wall", pos + new Vector2(+align, +spacing), scale));
+					corners.Add(CreateStructure(naming, "wall", pos + new Vector2(+align, -spacing), scale));						
+				break;
+			}
+		}
+		return corners;
 	}
 
 	GameObject BuildGate(GameObject gate, DigPlot plot, int direction, int side)

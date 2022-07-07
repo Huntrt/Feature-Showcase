@@ -218,6 +218,7 @@ MonoBehaviour:
       grouper: {fileID: 0}
     wall:
       enableBarrier: 1
+      enableCorner: 1
       enableRailing: 1
       barricadeNeighbor: 1
       prefab: {fileID: 4558046587480059573, guid: 4d71913f6a425e641909cd8e3872aa59,
