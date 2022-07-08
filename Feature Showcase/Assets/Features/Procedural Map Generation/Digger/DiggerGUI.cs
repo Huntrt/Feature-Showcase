@@ -9,7 +9,7 @@ public class DiggerGUI : MonoBehaviour
 {
     public TextMeshProUGUI plotCounter;
 	public TMP_InputField amountSetter;
-	public DiggerBuilder builder;
+	public DiggerBuilder_Room builder;
 	DiggerConfig config;
 
 	void Start()

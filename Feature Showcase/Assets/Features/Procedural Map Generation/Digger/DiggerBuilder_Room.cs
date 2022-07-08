@@ -6,7 +6,7 @@ using System;
 
 namespace ProceduralMapGeneration.Digger
 {
-public class DiggerBuilder : MonoBehaviour
+public class DiggerBuilder_Room : MonoBehaviour
 {
 	public DiggerConfig diggerConfig;
 	public Builder builder; [Serializable] public class Builder
@@ -67,7 +67,7 @@ public class DiggerBuilder : MonoBehaviour
 	void OnDisable() {diggerConfig.digCompleted -= AssembleStructure;}
 
 	//? Assemble Structure -> Build Bridge -> Decide direction to bridge -> Format Bridge -> Format Railing ->
-	//? -> Build all floor -> Build wall for each floor -> Format Barrier -> Format Gate -> Completed
+	//? -> Build all floor -> Build wall for each floor -> Format Barrier -> Format Corner -> Format Gate -> Completed
 
 	void AssembleStructure()
 	{
